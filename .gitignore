@@ -1,0 +1,15 @@
+.DS_Store
+
+# metals and bloop
+project/metals.sbt
+.metals
+.bsp
+.bloop
+
+.idea
+.vscode
+
+# sbt
+project/project/
+project/target/
+target/
