@@ -28,7 +28,7 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
 
   test("Should create container") {
     val container = new SecureContainer[IO]
-    val script = SecureContainer.Command(List("test"), "python:3.11.0a5-alpine3.15")
+    val script = SecureContainer.Command(List("test"), "python:3-alpine")
 
     MonadCancel[IO]
       .bracket(container.create(script))(_.pure[IO])(container.destroy)
