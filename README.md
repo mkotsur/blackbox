@@ -1,4 +1,5 @@
-## Blackbox 🔲
+## Blackbox 🔲 | ![Run SBT tests](https://github.com/mkotsur/blackbox/actions/workflows/run-sbt-test.yml/badge.svg)
+
 
 **Status:** Spiking Scala 3.
 
