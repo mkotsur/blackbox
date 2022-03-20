@@ -12,8 +12,8 @@ jobs:
           java-version: 17
           distribution: zulu
       - name: Pull python image for tests
-        run: docker pull python:3.11.0a5-alpine3.15
-      - name: Pull python image for tests
+        run: docker pull python:3-alpine
+      - name: Pull rocker image for tests
         run: docker pull rocker/r-base:4.1.3
       - name: Build and Test
         run: sbt -v +test
