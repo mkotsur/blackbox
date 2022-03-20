@@ -16,6 +16,7 @@ import docker.DockerContainer.State
 import nl.absolutevalue.blackbox.docker.DockerContainer
 import org.scalatest.Checkpoints
 
+import java.nio.file.Path
 import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
 
@@ -27,7 +28,7 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
 
   test("Should create container") {
     val container = new SecureContainer[IO]
-    val script = SecureContainer.Script(List("test"), "python:3.11.0a5-alpine3.15")
+    val script = SecureContainer.Command(List("test"), "python:3.11.0a5-alpine3.15")
 
     MonadCancel[IO]
       .bracket(container.create(script))(_.pure[IO])(container.destroy)
@@ -36,7 +37,7 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
 
   test("Should run a script in a container") {
     val container = new SecureContainer[IO]
-    val script = SecureContainer.Script(List("echo", "Hello World!"), "python:3-alpine")
+    val script = SecureContainer.Command(List("echo", "Hello World!"), "python:3-alpine")
 
     container
       .runR(script)
@@ -50,7 +51,7 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
   test("Process output of a quickly terminating container") {
     logger.info(s"Io Runtime ${ioRuntime}")
     val container = new SecureContainer[IO]
-    val script = SecureContainer.Script(List("echo", "Hello World!"), "python:3-alpine")
+    val script = SecureContainer.Command(List("echo", "Hello World!"), "python:3-alpine")
 
     container
       .runR(script)
@@ -60,7 +61,7 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
 
   test("Process delayed output of a container") {
     val container = new SecureContainer[IO]
-    val script = SecureContainer.Script(
+    val script = SecureContainer.Command(
       List("python", "-c", "import time; time.sleep(3); print('Hello World!');"),
       "python:3-alpine"
     )
@@ -73,7 +74,7 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
 
   test("Process quick output of a delayed container") {
     val container = new SecureContainer[IO]
-    val script = SecureContainer.Script(
+    val script = SecureContainer.Command(
       List("python", "-c", "import time; print('Hello World!'); time.sleep(3);"),
       "python:3-alpine"
     )
@@ -82,4 +83,19 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
       .runR(script)
       .use { case (stateStream, outputStream) => outputStream.compile.toList }
       .asserting(logs => logs.last shouldBe "Hello World!\n")
+  }
+
+  test("Mount a script as a volume and run it") {
+    val container = new SecureContainer[IO]
+    val scriptPath = Path.of(getClass.getResource("/test1.py").toURI)
+    val script = SecureContainer.PythonScript(
+      scriptPath.getParent,
+      scriptPath.getFileName.toString,
+      "python:3-alpine"
+    )
+
+    container
+      .runR(script)
+      .use { case (stateStream, outputStream) => outputStream.compile.toList }
+      .asserting(logs => logs.last shouldBe "Hello World From The Script!\n")
   }

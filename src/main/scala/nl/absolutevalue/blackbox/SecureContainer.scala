@@ -4,7 +4,7 @@ import cats.{Applicative, Monad}
 import cats.effect.{Async, Concurrent, IO, Sync, SyncIO, unsafe}
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.core.DockerClientBuilder
-import nl.absolutevalue.blackbox.SecureContainer.Script
+import nl.absolutevalue.blackbox.SecureContainer.{Artefact, Command}
 import org.typelevel.log4cats.Logger
 import nl.absolutevalue.blackbox.docker.DockerContainer.State
 
@@ -15,7 +15,7 @@ import cats.data.EitherT
 import com.github.dockerjava.api.command.InspectContainerResponse
 import nl.absolutevalue.blackbox.docker.DockerContainer
 import cats.effect.kernel.{Deferred, Resource, Spawn}
-import com.github.dockerjava.api.model.Frame
+import com.github.dockerjava.api.model.{AccessMode, Bind, Frame, HostConfig, Volume}
 import cats.implicits.*
 
 import scala.util.Failure
@@ -28,9 +28,14 @@ import cats.syntax.*
 import java.io.Closeable
 import nl.absolutevalue.blackbox.docker.DockerContainer.CommandsExtensions.*
 
+import java.nio.file.Path
+
 object SecureContainer:
   trait Artefact
-  case class Script(command: List[String], image: String) extends Artefact
+  case class Command(command: List[String], image: String) extends Artefact
+
+  // Local Home = path on the machine that runs this code.
+  case class PythonScript(localHome: Path, runFile: String, image: String) extends Artefact
 
 class SecureContainer[F[_]: Monad: Async: Logger: Applicative] {
 
@@ -39,6 +44,8 @@ class SecureContainer[F[_]: Monad: Async: Logger: Applicative] {
   import scala.jdk.CollectionConverters.*
 
   private val logger = Logger[F]
+
+  private val MountFolder = "/tmp/script"
 //
 //  private val client =
 //    new ZerodepDockerHttpClient.Builder().dockerHost(new URI("localhost")).build()
@@ -47,12 +54,22 @@ class SecureContainer[F[_]: Monad: Async: Logger: Applicative] {
       .getInstance()
       .build()
 
-  def create(script: Script): F[DockerContainer] = {
-    val command = dockerClient
-      .createContainerCmd(script.image)
+  def create(script: Artefact): F[DockerContainer] = {
+    val commandPart = script match {
+      case SecureContainer.PythonScript(localHome, runFile, image) =>
+        val bind = new Bind(localHome.toString, Volume(MountFolder), AccessMode.ro)
+        dockerClient
+          .createContainerCmd(image)
+          .withHostConfig(HostConfig.newHostConfig().withBinds(bind))
+          .withCmd(List("python", s"${MountFolder}/$runFile").asJava)
+      case SecureContainer.Command(command, image) =>
+        dockerClient
+          .createContainerCmd(image)
+          .withCmd(command.asJava)
+    }
+
+    val command = commandPart
       .withNetworkDisabled(true)
-      //          .withHostConfig(containerEnv.hostConfig)
-      .withCmd(script.command.asJava)
       .withAttachStdin(true)
       .withAttachStderr(true)
 
@@ -113,7 +130,7 @@ class SecureContainer[F[_]: Monad: Async: Logger: Applicative] {
     } yield line
   }
 
-  def runR(script: Script): Resource[F, (fs2.Stream[F, State], fs2.Stream[F, String])] = {
+  def runR(script: Artefact): Resource[F, (fs2.Stream[F, State], fs2.Stream[F, String])] = {
     val containerF = for {
       secureDockerCnt <- create(script)
       _ <- Sync[F].blocking(dockerClient.startContainerCmd(secureDockerCnt.containerId).exec())

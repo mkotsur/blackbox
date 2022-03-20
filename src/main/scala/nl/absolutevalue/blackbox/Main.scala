@@ -14,7 +14,7 @@ object Main extends IOApp.Simple {
 
   val run = {
     val container = new SecureContainer[IO]
-    val script = SecureContainer.Script(commandHelloWorld, "python:3-alpine")
+    val script = SecureContainer.Command(commandHelloWorld, "python:3-alpine")
 
     container
       .runR(script)
