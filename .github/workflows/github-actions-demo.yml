@@ -1,6 +1,19 @@
 name: Run tests
 on: [push]
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup JDK
+        uses: actions/setup-java@v2
+        with:
+          java-version: 17
+          distribution: zulu
+      - name: Build and Test
+        run: sbt -v +test
+
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
     steps:
