@@ -59,6 +59,17 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
       .asserting(logs => logs.last shouldBe "Hello World!\n")
   }
 
+  test("Capture two lines of output") {
+    logger.info(s"Io Runtime ${ioRuntime}")
+    val container = new SecureContainer[IO]
+    val script = SecureContainer.Command(List("echo", "Hello\nWorld!"), "python:3-alpine")
+
+    container
+      .runR(script)
+      .use { case (stateStream, outputStream) => outputStream.compile.toList }
+      .asserting(_ shouldBe List("Hello\n", "World!\n"))
+  }
+
   test("Process delayed output of a container") {
     val container = new SecureContainer[IO]
     val script = SecureContainer.Command(
