@@ -1,9 +1,10 @@
 package nl.absolutevalue.blackbox
 
+import cats.effect.kernel.Async
 import cats.effect.kernel.Resource.Pure
 import cats.effect.testing.scalatest.AsyncIOSpec
-import cats.effect.{IO, SyncIO}
-import cats.effect.MonadCancel
+import cats.effect.{IO, MonadCancel, Resource, Sync, SyncIO, unsafe}
+import cats.effect.unsafe.IORuntime
 import cats.implicits.*
 import cats.syntax.*
 import nl.absolutevalue.blackbox.SecureContainer
@@ -12,32 +13,73 @@ import org.scalatest.matchers.should.Matchers
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.typelevel.log4cats.{Logger, SelfAwareStructuredLogger}
 import docker.DockerContainer.State
+import nl.absolutevalue.blackbox.docker.DockerContainer
+import org.scalatest.Checkpoints
+
+import java.util.concurrent.Executors
+import scala.concurrent.ExecutionContext
 
 class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
 
-  implicit val logger: SelfAwareStructuredLogger[SyncIO] = Slf4jLogger.getLogger[SyncIO]
+  implicit val logger: SelfAwareStructuredLogger[IO] = Slf4jLogger.getLogger[IO]
 
-  private val commandHelloWorld = List("python", "-c", "\"print('Hello World!')\"")
+  override implicit lazy val ioRuntime: IORuntime = cats.effect.unsafe.implicits.global
 
   test("Should create container") {
-    val container = new SecureContainer[SyncIO]
+    val container = new SecureContainer[IO]
     val script = SecureContainer.Script(List("test"), "python:3.11.0a5-alpine3.15")
 
-    MonadCancel[SyncIO]
-      .bracket(container.create(script))(_.state.pure[SyncIO])(container.destroy)
-      .asserting(_ shouldBe State.Created)
+    MonadCancel[IO]
+      .bracket(container.create(script))(_.pure[IO])(container.destroy)
+      .asserting(_.containerId should not be empty)
   }
 
-  test("Should run script in a container") {
-    val container = new SecureContainer[SyncIO]
-    val script = SecureContainer.Script(commandHelloWorld, "python:3-alpine")
+  test("Should run a script in a container") {
+    val container = new SecureContainer[IO]
+    val script = SecureContainer.Script(List("echo", "Hello World!"), "python:3-alpine")
 
     container
-      .run(script)
-      .compile
-      .last
-      .asserting(_.get shouldBe a[State.ExitSuccess])
+      .runR(script)
+      .use { case (stateStream, outputStream) => stateStream.compile[IO, IO, State].toList }
+      .asserting(states => {
+        states.last should matchPattern { case State.ExitSuccess => }
+      })
 
-    //TODO: the container keeps hanging
+  }
 
+  test("Process output of a quickly terminating container") {
+    logger.info(s"Io Runtime ${ioRuntime}")
+    val container = new SecureContainer[IO]
+    val script = SecureContainer.Script(List("echo", "Hello World!"), "python:3-alpine")
+
+    container
+      .runR(script)
+      .use { case (stateStream, outputStream) => outputStream.compile.toList }
+      .asserting(logs => logs.last shouldBe "Hello World!\n")
+  }
+
+  test("Process delayed output of a container") {
+    val container = new SecureContainer[IO]
+    val script = SecureContainer.Script(
+      List("python", "-c", "import time; time.sleep(3); print('Hello World!');"),
+      "python:3-alpine"
+    )
+
+    container
+      .runR(script)
+      .use { case (stateStream, outputStream) => outputStream.compile.toList }
+      .asserting(logs => logs.last shouldBe "Hello World!\n")
+  }
+
+  test("Process quick output of a delayed container") {
+    val container = new SecureContainer[IO]
+    val script = SecureContainer.Script(
+      List("python", "-c", "import time; print('Hello World!'); time.sleep(3);"),
+      "python:3-alpine"
+    )
+
+    container
+      .runR(script)
+      .use { case (stateStream, outputStream) => outputStream.compile.toList }
+      .asserting(logs => logs.last shouldBe "Hello World!\n")
   }
