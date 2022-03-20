@@ -17,7 +17,7 @@ object Main extends IOApp.Simple {
     val script = SecureContainer.Command(commandHelloWorld, "python:3-alpine")
 
     container
-      .runR(script)
+      .run(script)
       .use { case (stateStream, outputStream) =>
         stateStream
           .compile[IO, IO, DockerContainer.State]

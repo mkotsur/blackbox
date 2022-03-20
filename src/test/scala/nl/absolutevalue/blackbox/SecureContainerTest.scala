@@ -35,12 +35,12 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
       .asserting(_.containerId should not be empty)
   }
 
-  test("Should run a script in a container") {
+  test("Should run a command in a container") {
     val container = new SecureContainer[IO]
     val script = SecureContainer.Command(List("echo", "Hello World!"), "python:3-alpine")
 
     container
-      .runR(script)
+      .run(script)
       .use { case (stateStream, outputStream) => stateStream.compile[IO, IO, State].toList }
       .asserting(states => {
         states.last should matchPattern { case State.ExitSuccess => }
@@ -48,29 +48,29 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
 
   }
 
-  test("Process output of a quickly terminating container") {
+  test("Process single line of output of a quick command in a container") {
     logger.info(s"Io Runtime ${ioRuntime}")
     val container = new SecureContainer[IO]
     val script = SecureContainer.Command(List("echo", "Hello World!"), "python:3-alpine")
 
     container
-      .runR(script)
+      .run(script)
       .use { case (stateStream, outputStream) => outputStream.compile.toList }
       .asserting(logs => logs.last shouldBe "Hello World!\n")
   }
 
-  test("Capture two lines of output") {
+  test("Process two lines of output of a quick command in a container") {
     logger.info(s"Io Runtime ${ioRuntime}")
     val container = new SecureContainer[IO]
     val script = SecureContainer.Command(List("echo", "Hello\nWorld!"), "python:3-alpine")
 
     container
-      .runR(script)
+      .run(script)
       .use { case (stateStream, outputStream) => outputStream.compile.toList }
       .asserting(_ shouldBe List("Hello\n", "World!\n"))
   }
 
-  test("Process delayed output of a container") {
+  test("Process delayed Python output of a container") {
     val container = new SecureContainer[IO]
     val script = SecureContainer.Command(
       List("python", "-c", "import time; time.sleep(3); print('Hello World!');"),
@@ -78,12 +78,12 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
     )
 
     container
-      .runR(script)
+      .run(script)
       .use { case (stateStream, outputStream) => outputStream.compile.toList }
       .asserting(logs => logs.last shouldBe "Hello World!\n")
   }
 
-  test("Process quick output of a delayed container") {
+  test("Process quick Python output of a delayed container") {
     val container = new SecureContainer[IO]
     val script = SecureContainer.Command(
       List("python", "-c", "import time; print('Hello World!'); time.sleep(3);"),
@@ -91,12 +91,12 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
     )
 
     container
-      .runR(script)
+      .run(script)
       .use { case (stateStream, outputStream) => outputStream.compile.toList }
       .asserting(logs => logs.last shouldBe "Hello World!\n")
   }
 
-  test("Mount a script as a volume and run it") {
+  test("Mount a Python script as a volume and run it") {
     val container = new SecureContainer[IO]
     val scriptPath = Path.of(getClass.getResource("/test1.py").toURI)
     val script = SecureContainer.PythonScript(
@@ -106,7 +106,20 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
     )
 
     container
-      .runR(script)
+      .run(script)
       .use { case (stateStream, outputStream) => outputStream.compile.toList }
       .asserting(logs => logs.last shouldBe "Hello World From The Script!\n")
+  }
+
+  test("Process quick R output in a container") {
+    val container = new SecureContainer[IO]
+    val script = SecureContainer.Command(
+      List("Rscript", "-e", "print('Hello World!');"),
+      "rocker/r-base:4.1.3"
+    )
+
+    container
+      .run(script)
+      .use { case (stateStream, outputStream) => outputStream.compile.toList }
+      .asserting(logs => logs.last shouldBe "[1] \"Hello World!\"\n")
   }

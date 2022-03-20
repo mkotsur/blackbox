@@ -28,6 +28,7 @@ import cats.syntax.*
 import java.io.Closeable
 import nl.absolutevalue.blackbox.docker.DockerContainer.CommandsExtensions.*
 
+import java.net.URI
 import java.nio.file.Path
 
 object SecureContainer:
@@ -46,12 +47,14 @@ class SecureContainer[F[_]: Monad: Async: Logger: Applicative] {
   private val logger = Logger[F]
 
   private val MountFolder = "/tmp/script"
-//
-//  private val client =
-//    new ZerodepDockerHttpClient.Builder().dockerHost(new URI("localhost")).build()
+
+  private val httpClient =
+    new ZerodepDockerHttpClient.Builder().dockerHost(new URI("unix:///var/run/docker.sock")).build()
+
   private val dockerClient: DockerClient =
     DockerClientBuilder
       .getInstance()
+      .withDockerHttpClient(httpClient)
       .build()
 
   def create(script: Artefact): F[DockerContainer] = {
@@ -108,7 +111,7 @@ class SecureContainer[F[_]: Monad: Async: Logger: Applicative] {
         case s       => fs2.Stream(s)
       }
 
-  def outputStream(c: DockerContainer): fs2.Stream[F, String] = {
+  private def outputStream(c: DockerContainer): fs2.Stream[F, String] = {
 
     val command = dockerClient
       .logContainerCmd(c.containerId)
@@ -130,7 +133,7 @@ class SecureContainer[F[_]: Monad: Async: Logger: Applicative] {
     } yield line
   }
 
-  def runR(script: Artefact): Resource[F, (fs2.Stream[F, State], fs2.Stream[F, String])] = {
+  def run(script: Artefact): Resource[F, (fs2.Stream[F, State], fs2.Stream[F, String])] = {
     val containerF = for {
       secureDockerCnt <- create(script)
       _ <- Sync[F].blocking(dockerClient.startContainerCmd(secureDockerCnt.containerId).exec())
