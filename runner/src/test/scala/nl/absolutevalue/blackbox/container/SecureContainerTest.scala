@@ -1,20 +1,20 @@
-package nl.absolutevalue.blackbox
+package nl.absolutevalue.blackbox.container
 
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource.Pure
 import cats.effect.testing.scalatest.AsyncIOSpec
-import cats.effect.{IO, MonadCancel, Resource, Sync, SyncIO, unsafe}
 import cats.effect.unsafe.IORuntime
+import cats.effect.*
 import cats.implicits.*
 import cats.syntax.*
-import nl.absolutevalue.blackbox.SecureContainer
+import nl.absolutevalue.blackbox.container.SecureContainer
+import nl.absolutevalue.blackbox.docker.DockerContainer
+import nl.absolutevalue.blackbox.docker.DockerContainer.State
+import org.scalatest.Checkpoints
 import org.scalatest.funsuite.{AnyFunSuite, AsyncFunSuite}
 import org.scalatest.matchers.should.Matchers
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.typelevel.log4cats.{Logger, SelfAwareStructuredLogger}
-import docker.DockerContainer.State
-import nl.absolutevalue.blackbox.docker.DockerContainer
-import org.scalatest.Checkpoints
 
 import java.nio.file.Path
 import java.util.concurrent.Executors
@@ -25,6 +25,8 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
   implicit val logger: SelfAwareStructuredLogger[IO] = Slf4jLogger.getLogger[IO]
 
   override implicit lazy val ioRuntime: IORuntime = cats.effect.unsafe.implicits.global
+
+  private val pythonRunWith = SecureContainer.Command(List("python"), "python:3-alpine")
 
   test("Should create container") {
     val container = new SecureContainer[IO]
@@ -99,10 +101,10 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
   test("Mount a Python script as a volume and run it") {
     val container = new SecureContainer[IO]
     val scriptPath = Path.of(getClass.getResource("/test1.py").toURI)
-    val script = SecureContainer.PythonScript(
+    val script = SecureContainer.Script(
       scriptPath.getParent,
       scriptPath.getFileName.toString,
-      "python:3-alpine"
+      SecureContainer.Command(List("python"), "python:3-alpine")
     )
 
     container

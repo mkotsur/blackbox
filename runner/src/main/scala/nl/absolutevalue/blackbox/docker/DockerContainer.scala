@@ -1,6 +1,5 @@
 package nl.absolutevalue.blackbox.docker
 
-import cats.effect.kernel.Spawn
 import cats.{Applicative, Monad}
 import cats.effect.{Async, Sync}
 import cats.effect.std.Dispatcher

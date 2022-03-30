@@ -1,53 +1,52 @@
-package nl.absolutevalue.blackbox
+package nl.absolutevalue.blackbox.container
 
-import cats.{Applicative, Monad}
-import cats.effect.{Async, Concurrent, IO, Sync, SyncIO, unsafe}
-import com.github.dockerjava.api.DockerClient
-import com.github.dockerjava.core.DockerClientBuilder
-import nl.absolutevalue.blackbox.SecureContainer.{Artefact, Command}
-import org.typelevel.log4cats.Logger
-import nl.absolutevalue.blackbox.docker.DockerContainer.State
-
-import scala.collection.View.FlatMap
-import scala.concurrent.Future
-import cats.effect.kernel.Resource.ExitCase
 import cats.data.EitherT
-import com.github.dockerjava.api.command.InspectContainerResponse
-import nl.absolutevalue.blackbox.docker.DockerContainer
+import cats.effect.kernel.Resource.ExitCase
 import cats.effect.kernel.{Deferred, Resource, Spawn}
-import com.github.dockerjava.api.model.{AccessMode, Bind, Frame, HostConfig, Volume}
-import cats.implicits.*
-
-import scala.util.Failure
-import cats.MonadError
 import cats.effect.std.{Dispatcher, Queue}
-import com.github.dockerjava.api.async.ResultCallbackTemplate
-import com.github.dockerjava.zerodep.ZerodepDockerHttpClient
+import cats.effect.*
+import cats.implicits.*
 import cats.syntax.*
+import cats.{Applicative, Monad, MonadError}
+import com.github.dockerjava.api.DockerClient
+import com.github.dockerjava.api.async.ResultCallbackTemplate
+import com.github.dockerjava.api.command.InspectContainerResponse
+import com.github.dockerjava.api.model.*
+import com.github.dockerjava.core.DockerClientBuilder
+import com.github.dockerjava.zerodep.ZerodepDockerHttpClient
+import nl.absolutevalue.blackbox.container.SecureContainer.{Artefact, Command}
+import nl.absolutevalue.blackbox.docker.DockerContainer
+import nl.absolutevalue.blackbox.docker.DockerContainer.CommandsExtensions.*
+import nl.absolutevalue.blackbox.docker.DockerContainer.State
+import org.typelevel.log4cats.Logger
 
 import java.io.Closeable
-import nl.absolutevalue.blackbox.docker.DockerContainer.CommandsExtensions.*
-
 import java.net.URI
 import java.nio.file.Path
+import scala.collection.View.FlatMap
+import scala.concurrent.Future
+import scala.util.Failure
 
 object SecureContainer:
   trait Artefact
   case class Command(command: List[String], image: String) extends Artefact
 
   // Local Home = path on the machine that runs this code.
-  case class PythonScript(localHome: Path, runFile: String, image: String) extends Artefact
+  case class Script(localHome: Path, runFile: String, runWith: Command) extends Artefact
 
 class SecureContainer[F[_]: Monad: Async: Logger: Applicative] {
 
   import DockerContainer.State
   import DockerContainer.State.*
+
   import scala.jdk.CollectionConverters.*
 
   private val logger = Logger[F]
 
+  //TODO: extract in conf
   private val MountFolder = "/tmp/script"
 
+  //TODO: extract in conf
   private val httpClient =
     new ZerodepDockerHttpClient.Builder().dockerHost(new URI("unix:///var/run/docker.sock")).build()
 
@@ -58,13 +57,18 @@ class SecureContainer[F[_]: Monad: Async: Logger: Applicative] {
       .build()
 
   def create(script: Artefact): F[DockerContainer] = {
+    import SecureContainer.{Script, Command}
     val commandPart = script match {
-      case SecureContainer.PythonScript(localHome, runFile, image) =>
+      case Script(
+            localHome,
+            runFile,
+            Command(executable, image)
+          ) =>
         val bind = new Bind(localHome.toString, Volume(MountFolder), AccessMode.ro)
         dockerClient
           .createContainerCmd(image)
           .withHostConfig(HostConfig.newHostConfig().withBinds(bind))
-          .withCmd(List("python", s"${MountFolder}/$runFile").asJava)
+          .withCmd((executable :+ s"$MountFolder/$runFile").asJava)
       case SecureContainer.Command(command, image) =>
         dockerClient
           .createContainerCmd(image)
@@ -94,7 +98,7 @@ class SecureContainer[F[_]: Monad: Async: Logger: Applicative] {
 
     for {
       state <- containerStateF
-      res <- DockerContainer.State.state(state.getStatus, state.getExitCode) match
+      res <- DockerContainer.State.state(state.getStatus, state.getExitCodeLong.toInt) match
         case Right(value) => Applicative[F].pure(value)
         case Left(error)  => Sync[F].raiseError(error)
     } yield res

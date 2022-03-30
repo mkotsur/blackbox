@@ -2,6 +2,7 @@ package nl.absolutevalue.blackbox
 
 import cats.effect.{IO, IOApp}
 import nl.absolutevalue.blackbox.docker.DockerContainer
+import nl.absolutevalue.blackbox.container.SecureContainer
 import org.typelevel.log4cats.SelfAwareStructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
