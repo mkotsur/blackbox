@@ -8,6 +8,7 @@ import cats.effect.*
 import cats.implicits.*
 import cats.syntax.*
 import nl.absolutevalue.blackbox.container.SecureContainer
+import nl.absolutevalue.blackbox.container.SecureContainer.Data
 import nl.absolutevalue.blackbox.docker.DockerContainer
 import nl.absolutevalue.blackbox.docker.DockerContainer.State
 import org.scalatest.Checkpoints
@@ -124,4 +125,18 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
       .run(script)
       .use { case (stateStream, outputStream) => outputStream.compile.toList }
       .asserting(logs => logs.last shouldBe "[1] \"Hello World!\"\n")
+  }
+
+  test("Mount a directory with dataset (s)") {
+    val container = new SecureContainer[IO]
+    val datasetPath = Path.of(getClass.getResource("/").toURI)
+    val script = SecureContainer.Command(
+      List("cat", "/tmp/data/dataset1.txt"),
+      "python:3-alpine"
+    )
+
+    container
+      .run(script, Data(datasetPath).some)
+      .use { case (stateStream, outputStream) => outputStream.compile.toList }
+      .asserting(logs => logs.mkString("\n") shouldBe "Hello World! I'm dataset 1!")
   }

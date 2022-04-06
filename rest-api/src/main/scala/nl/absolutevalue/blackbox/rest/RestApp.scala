@@ -19,6 +19,8 @@ import cats.syntax.*
 import nl.absolutevalue.blackbox.container.SecureContainer
 import nl.absolutevalue.blackbox.rest.RestContainerDispatcher
 
+import java.util.UUID
+
 object RestApp extends IOApp.Simple {
 
   implicit val logger: SelfAwareStructuredLogger[IO] = Slf4jLogger.getLogger[IO]
@@ -40,7 +42,7 @@ object RestApp extends IOApp.Simple {
       .use(_ => IO.never)
 
     for {
-      runRequestQ <- Queue.unbounded[IO, RunRequest]
+      runRequestQ <- Queue.unbounded[IO, (UUID, RunRequest)]
       runRequestS = fs2.Stream.fromQueueUnterminated(runRequestQ)
 
       acceptedsRef <- Ref[IO].of[List[AcceptedResponse]](Nil)

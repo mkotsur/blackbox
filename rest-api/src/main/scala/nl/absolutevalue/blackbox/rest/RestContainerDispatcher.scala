@@ -8,12 +8,14 @@ import nl.absolutevalue.blackbox.docker.DockerContainer
 import nl.absolutevalue.blackbox.container.SecureContainer
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 import cats.implicits.*
 import cats.effect.implicits.*
+import nl.absolutevalue.blackbox.container.SecureContainer.Data
 import nl.absolutevalue.blackbox.util.TempFiles
 import org.typelevel.log4cats.Logger
 
+import java.time.LocalDateTime
 import java.util.UUID
 
 class RestContainerDispatcher[F[_]: Async: Logger](
@@ -22,8 +24,7 @@ class RestContainerDispatcher[F[_]: Async: Logger](
     sc: SecureContainer[F]
 ) {
 
-  def dispatch: RunRequest => F[AcceptedResponse] = rr => {
-
+  def dispatch: ((UUID, RunRequest)) => F[UUID] = { case (requestUUID, rr) =>
     def secureContainerWithScriptRes(re: SecureContainer.Command) = for {
       tempDir <- TempFiles.tempDir[F]
       _ <- Resource.eval(Logger[F].debug(s"Create temp directory ${tempDir.toString}"))
@@ -32,12 +33,12 @@ class RestContainerDispatcher[F[_]: Async: Logger](
           Files.write(tempDir.resolve("script.bb"), rr.code.getBytes(StandardCharsets.UTF_8))
         )
       )
-      res <- sc.run(SecureContainer.Script(tempDir, "script.bb", re))
+      dataPath <- Resource.eval(Sync[F].delay(Path.of(getClass.getResource("/data/").toURI)))
+      res <- sc.run(SecureContainer.Script(tempDir, "script.bb", re), Data(dataPath).some)
     } yield res
 
     for {
-      requestId <- Sync[F].delay(UUID.randomUUID.toString)
-      _ <- Logger[F].debug(s"Assigning id $requestId to the run request $rr")
+      _ <- Logger[F].debug(s"Processing id ${requestUUID.toString} to the run request $rr")
       runWith <- rr.language match {
         case "python" => SecureContainer.Command(List("python"), "python:3-alpine").pure[F]
         case "r"      => SecureContainer.Command(List("Rscript"), "rocker/r-base:4.1.3").pure[F]
@@ -48,14 +49,28 @@ class RestContainerDispatcher[F[_]: Async: Logger](
         f <- secureContainerWithScriptRes(runWith).use { case (statesStream, outStream) =>
           for {
             outs <- outStream.compile.toList
+            statesStream <- statesStream.compile.toList
+            exitCode = statesStream.last match {
+              case DockerContainer.State.ExitFail(code) => code.some
+              case DockerContainer.State.ExitSuccess    => 0.some
+              case _                                    => None
+            }
             _ <- Logger[F].debug(s"Read ${outs.size} lines of code")
+            now <- Sync[F].delay(LocalDateTime.now())
             _ <- completedsRef.update(
-              _ :+ RunCompletedResponse(0, outs.mkString("\n"), "")
+              _ :+ RunCompletedResponse(
+                requestUUID.toString,
+                exitCode,
+                outs.mkString("\n"),
+                "",
+                now,
+                rr
+              )
             )
           } yield ()
         }.start
-      } yield AcceptedResponse(requestId)
-    } yield acceptedResponse
+      } yield ()
+    } yield requestUUID
   }
 
 }

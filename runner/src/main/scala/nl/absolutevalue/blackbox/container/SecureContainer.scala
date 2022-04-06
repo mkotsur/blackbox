@@ -10,11 +10,11 @@ import cats.syntax.*
 import cats.{Applicative, Monad, MonadError}
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.async.ResultCallbackTemplate
-import com.github.dockerjava.api.command.InspectContainerResponse
+import com.github.dockerjava.api.command.{CreateContainerCmd, InspectContainerResponse}
 import com.github.dockerjava.api.model.*
 import com.github.dockerjava.core.DockerClientBuilder
 import com.github.dockerjava.zerodep.ZerodepDockerHttpClient
-import nl.absolutevalue.blackbox.container.SecureContainer.{Artefact, Command}
+import nl.absolutevalue.blackbox.container.SecureContainer.{Artefact, Command, Data}
 import nl.absolutevalue.blackbox.docker.DockerContainer
 import nl.absolutevalue.blackbox.docker.DockerContainer.CommandsExtensions.*
 import nl.absolutevalue.blackbox.docker.DockerContainer.State
@@ -34,6 +34,9 @@ object SecureContainer:
   // Local Home = path on the machine that runs this code.
   case class Script(localHome: Path, runFile: String, runWith: Command) extends Artefact
 
+  // Local Path = path on the machine that runs this code.
+  case class Data(localPath: Path)
+
 class SecureContainer[F[_]: Monad: Async: Logger: Applicative] {
 
   import DockerContainer.State
@@ -44,7 +47,8 @@ class SecureContainer[F[_]: Monad: Async: Logger: Applicative] {
   private val logger = Logger[F]
 
   //TODO: extract in conf
-  private val MountFolder = "/tmp/script"
+  private val ScriptMountFolder = "/tmp/script"
+  private val DataMountFolder = "/tmp/data"
 
   //TODO: extract in conf
   private val httpClient =
@@ -56,33 +60,36 @@ class SecureContainer[F[_]: Monad: Async: Logger: Applicative] {
       .withDockerHttpClient(httpClient)
       .build()
 
-  def create(script: Artefact): F[DockerContainer] = {
+  def create(script: Artefact, dataOpt: Option[Data] = None): F[DockerContainer] = {
     import SecureContainer.{Script, Command}
-    val commandPart = script match {
+
+    val (image, command, scriptBinds) = script match {
       case Script(
             localHome,
             runFile,
             Command(executable, image)
           ) =>
-        val bind = new Bind(localHome.toString, Volume(MountFolder), AccessMode.ro)
-        dockerClient
-          .createContainerCmd(image)
-          .withHostConfig(HostConfig.newHostConfig().withBinds(bind))
-          .withCmd((executable :+ s"$MountFolder/$runFile").asJava)
-      case SecureContainer.Command(command, image) =>
-        dockerClient
-          .createContainerCmd(image)
-          .withCmd(command.asJava)
+        val scriptBind = new Bind(localHome.toString, Volume(ScriptMountFolder), AccessMode.ro)
+        (image, executable :+ s"$ScriptMountFolder/$runFile", List(scriptBind))
+      case SecureContainer.Command(command, image) => (image, command, Nil)
     }
 
-    val command = commandPart
+    val dataBinds =
+      dataOpt.map(data => new Bind(data.localPath.toString, Volume(DataMountFolder), AccessMode.ro))
+
+    val createContainerCmd = dockerClient
+      .createContainerCmd(image)
+      .withHostConfig(
+        HostConfig.newHostConfig().withBinds((scriptBinds ++ dataBinds.toList).asJava)
+      )
+      .withCmd(command.asJava)
       .withNetworkDisabled(true)
       .withAttachStdin(true)
       .withAttachStderr(true)
 
     for {
       _ <- logger.debug(s"Executing command $script")
-      response <- Sync[F].blocking(command.exec())
+      response <- Sync[F].blocking(createContainerCmd.exec())
       _ <- logger.info(s"Created Docker container ${response.getId}")
     } yield DockerContainer(response.getId)
   }
@@ -137,9 +144,12 @@ class SecureContainer[F[_]: Monad: Async: Logger: Applicative] {
     } yield line
   }
 
-  def run(script: Artefact): Resource[F, (fs2.Stream[F, State], fs2.Stream[F, String])] = {
+  def run(
+      script: Artefact,
+      dataOpt: Option[Data] = None
+  ): Resource[F, (fs2.Stream[F, State], fs2.Stream[F, String])] = {
     val containerF = for {
-      secureDockerCnt <- create(script)
+      secureDockerCnt <- create(script, dataOpt)
       _ <- Sync[F].blocking(dockerClient.startContainerCmd(secureDockerCnt.containerId).exec())
       _ <- logger.debug(s"Container started ${secureDockerCnt.containerId}")
     } yield DockerContainer(secureDockerCnt.containerId)
