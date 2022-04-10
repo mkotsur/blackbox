@@ -18,6 +18,7 @@ import cats.implicits.*
 import cats.syntax.*
 import nl.absolutevalue.blackbox.container.SecureContainer
 import nl.absolutevalue.blackbox.rest.RestContainerDispatcher
+import nl.absolutevalue.blackbox.runner.RunnerConf
 
 import java.util.UUID
 
@@ -32,7 +33,7 @@ object RestApp extends IOApp.Simple {
     //☑️ 2. Queue and Stream
     //☑ 3. Connect stream to runner
     //☑️ 4. Request -> Reply format
-    //5. TAPIR
+    //❌ 5. TAPIR
     //6. Refactor
 
     def blazeServer(routes: HttpRoutes[IO]) = BlazeServerBuilder[IO]
@@ -47,8 +48,8 @@ object RestApp extends IOApp.Simple {
 
       acceptedsRef <- Ref[IO].of[List[AcceptedResponse]](Nil)
       completedsRef <- Ref[IO].of[List[RunCompletedResponse]](Nil)
-
-      sc = new SecureContainer[IO]()
+      runnerConf <- RunnerConf.loadF[IO]
+      sc = new SecureContainer[IO](runnerConf.dockerUri, runnerConf.mountFolders)
       dispatcher = new RestContainerDispatcher[IO](acceptedsRef, completedsRef, sc)
       never <- (
         blazeServer(new RestRoutes[IO](runRequestQ, completedsRef).all),

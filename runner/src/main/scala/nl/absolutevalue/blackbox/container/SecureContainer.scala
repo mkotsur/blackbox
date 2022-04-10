@@ -18,11 +18,12 @@ import nl.absolutevalue.blackbox.container.SecureContainer.{Artefact, Command, D
 import nl.absolutevalue.blackbox.docker.DockerContainer
 import nl.absolutevalue.blackbox.docker.DockerContainer.CommandsExtensions.*
 import nl.absolutevalue.blackbox.docker.DockerContainer.State
+import nl.absolutevalue.blackbox.runner.RunnerConf.MountFolders
 import org.typelevel.log4cats.Logger
 
 import java.io.Closeable
 import java.net.URI
-import java.nio.file.Path
+import java.nio.file.{Path, Paths}
 import scala.collection.View.FlatMap
 import scala.concurrent.Future
 import scala.util.Failure
@@ -37,7 +38,10 @@ object SecureContainer:
   // Local Path = path on the machine that runs this code.
   case class Data(localPath: Path)
 
-class SecureContainer[F[_]: Monad: Async: Logger: Applicative] {
+class SecureContainer[F[_]: Monad: Async: Logger: Applicative](
+    dockerUri: URI,
+    mountFolders: MountFolders
+) {
 
   import DockerContainer.State
   import DockerContainer.State.*
@@ -47,12 +51,8 @@ class SecureContainer[F[_]: Monad: Async: Logger: Applicative] {
   private val logger = Logger[F]
 
   //TODO: extract in conf
-  private val ScriptMountFolder = "/tmp/script"
-  private val DataMountFolder = "/tmp/data"
-
-  //TODO: extract in conf
   private val httpClient =
-    new ZerodepDockerHttpClient.Builder().dockerHost(new URI("unix:///var/run/docker.sock")).build()
+    new ZerodepDockerHttpClient.Builder().dockerHost(dockerUri).build()
 
   private val dockerClient: DockerClient =
     DockerClientBuilder
@@ -69,13 +69,16 @@ class SecureContainer[F[_]: Monad: Async: Logger: Applicative] {
             runFile,
             Command(executable, image)
           ) =>
-        val scriptBind = new Bind(localHome.toString, Volume(ScriptMountFolder), AccessMode.ro)
-        (image, executable :+ s"$ScriptMountFolder/$runFile", List(scriptBind))
+        val scriptBind =
+          new Bind(localHome.toString, Volume(mountFolders.code.toString), AccessMode.ro)
+        (image, executable :+ mountFolders.code.resolve(runFile).toString, List(scriptBind))
       case SecureContainer.Command(command, image) => (image, command, Nil)
     }
 
     val dataBinds =
-      dataOpt.map(data => new Bind(data.localPath.toString, Volume(DataMountFolder), AccessMode.ro))
+      dataOpt.map(data =>
+        new Bind(data.localPath.toString, Volume(mountFolders.data.toString), AccessMode.ro)
+      )
 
     val createContainerCmd = dockerClient
       .createContainerCmd(image)

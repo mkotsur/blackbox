@@ -11,13 +11,15 @@ import nl.absolutevalue.blackbox.container.SecureContainer
 import nl.absolutevalue.blackbox.container.SecureContainer.Data
 import nl.absolutevalue.blackbox.docker.DockerContainer
 import nl.absolutevalue.blackbox.docker.DockerContainer.State
+import nl.absolutevalue.blackbox.runner.RunnerConf.MountFolders
 import org.scalatest.Checkpoints
 import org.scalatest.funsuite.{AnyFunSuite, AsyncFunSuite}
 import org.scalatest.matchers.should.Matchers
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.typelevel.log4cats.{Logger, SelfAwareStructuredLogger}
 
-import java.nio.file.Path
+import java.net.URI
+import java.nio.file.{Path, Paths}
 import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
 
@@ -28,9 +30,12 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
   override implicit lazy val ioRuntime: IORuntime = cats.effect.unsafe.implicits.global
 
   private val pythonRunWith = SecureContainer.Command(List("python"), "python:3-alpine")
+  private val mntFolders = MountFolders(Paths.get("/tmp/code"), Paths.get("/tmp/data"))
+  private val dockerUri = new URI("unix:///var/run/docker.sock")
 
   test("Should create container") {
-    val container = new SecureContainer[IO]
+
+    val container = new SecureContainer[IO](dockerUri, mntFolders)
     val script = SecureContainer.Command(List("test"), "python:3-alpine")
 
     MonadCancel[IO]
@@ -39,7 +44,7 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
   }
 
   test("Should run a command in a container") {
-    val container = new SecureContainer[IO]
+    val container = new SecureContainer[IO](dockerUri, mntFolders)
     val script = SecureContainer.Command(List("echo", "Hello World!"), "python:3-alpine")
 
     container
@@ -53,7 +58,7 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
 
   test("Process single line of output of a quick command in a container") {
     logger.info(s"Io Runtime ${ioRuntime}")
-    val container = new SecureContainer[IO]
+    val container = new SecureContainer[IO](dockerUri, mntFolders)
     val script = SecureContainer.Command(List("echo", "Hello World!"), "python:3-alpine")
 
     container
@@ -64,7 +69,7 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
 
   test("Process two lines of output of a quick command in a container") {
     logger.info(s"Io Runtime ${ioRuntime}")
-    val container = new SecureContainer[IO]
+    val container = new SecureContainer[IO](dockerUri, mntFolders)
     val script = SecureContainer.Command(List("echo", "Hello\nWorld!"), "python:3-alpine")
 
     container
@@ -74,7 +79,7 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
   }
 
   test("Process delayed Python output of a container") {
-    val container = new SecureContainer[IO]
+    val container = new SecureContainer[IO](dockerUri, mntFolders)
     val script = SecureContainer.Command(
       List("python", "-c", "import time; time.sleep(3); print('Hello World!');"),
       "python:3-alpine"
@@ -87,7 +92,7 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
   }
 
   test("Process quick Python output of a delayed container") {
-    val container = new SecureContainer[IO]
+    val container = new SecureContainer[IO](dockerUri, mntFolders)
     val script = SecureContainer.Command(
       List("python", "-c", "import time; print('Hello World!'); time.sleep(3);"),
       "python:3-alpine"
@@ -100,7 +105,7 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
   }
 
   test("Mount a Python script as a volume and run it") {
-    val container = new SecureContainer[IO]
+    val container = new SecureContainer[IO](dockerUri, mntFolders)
     val scriptPath = Path.of(getClass.getResource("/test1.py").toURI)
     val script = SecureContainer.Script(
       scriptPath.getParent,
@@ -115,7 +120,7 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
   }
 
   test("Process quick R output in a container") {
-    val container = new SecureContainer[IO]
+    val container = new SecureContainer[IO](dockerUri, mntFolders)
     val script = SecureContainer.Command(
       List("Rscript", "-e", "print('Hello World!');"),
       "rocker/r-base:4.1.3"
@@ -128,7 +133,7 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
   }
 
   test("Mount a directory with dataset (s)") {
-    val container = new SecureContainer[IO]
+    val container = new SecureContainer[IO](dockerUri, mntFolders)
     val datasetPath = Path.of(getClass.getResource("/").toURI)
     val script = SecureContainer.Command(
       List("cat", "/tmp/data/dataset1.txt"),
