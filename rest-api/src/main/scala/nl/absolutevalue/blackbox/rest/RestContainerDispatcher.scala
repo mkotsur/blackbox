@@ -13,14 +13,18 @@ import cats.implicits.*
 import cats.effect.implicits.*
 import nl.absolutevalue.blackbox.container.SecureContainer.Data
 import nl.absolutevalue.blackbox.util.TempFiles
+import org.apache.commons.io.FileUtils
 import org.typelevel.log4cats.Logger
 
+import java.io.File
+import java.net.URI
 import java.time.LocalDateTime
 import java.util.UUID
 
 class RestContainerDispatcher[F[_]: Async: Logger](
     responsesRef: Ref[F, List[AcceptedResponse]],
     completedsRef: Ref[F, List[RunCompletedResponse]],
+    dataSamplesPath: Path,
     sc: SecureContainer[F]
 ) {
 
@@ -33,8 +37,7 @@ class RestContainerDispatcher[F[_]: Async: Logger](
           Files.write(tempDir.resolve("script.bb"), rr.code.getBytes(StandardCharsets.UTF_8))
         )
       )
-      dataPath <- Resource.eval(Sync[F].delay(Path.of(getClass.getResource("/data/").toURI)))
-      res <- sc.run(SecureContainer.Script(tempDir, "script.bb", re), Data(dataPath).some)
+      res <- sc.run(SecureContainer.Script(tempDir, "script.bb", re), Data(dataSamplesPath).some)
     } yield res
 
     for {

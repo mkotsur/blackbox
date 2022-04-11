@@ -1,11 +1,11 @@
 package nl.absolutevalue.blackbox.rest
 
 import cats.effect.std.Queue
-import cats.effect.{IO, IOApp, Ref}
+import cats.effect.{IO, IOApp, Ref, Resource, Sync}
 import org.http4s.HttpRoutes
 import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.dsl.io.*
-import org.typelevel.log4cats.SelfAwareStructuredLogger
+import org.typelevel.log4cats.{Logger, SelfAwareStructuredLogger}
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.http4s.*
 import org.http4s.circe.CirceEntityCodec.*
@@ -50,7 +50,17 @@ object RestApp extends IOApp.Simple {
       completedsRef <- Ref[IO].of[List[RunCompletedResponse]](Nil)
       runnerConf <- RunnerConf.loadF[IO]
       sc = new SecureContainer[IO](runnerConf.dockerUri, runnerConf.mountFolders)
-      dispatcher = new RestContainerDispatcher[IO](acceptedsRef, completedsRef, sc)
+
+      dsAbsPath <- Sync[IO].delay(
+        runnerConf.dataSamplesPath.toFile.getCanonicalFile.toPath
+      )
+      _ <- Logger[IO].info(s"Loading data samples from ${dsAbsPath.toString}")
+      dispatcher = new RestContainerDispatcher[IO](
+        acceptedsRef,
+        completedsRef,
+        dsAbsPath,
+        sc
+      )
       never <- (
         blazeServer(new RestRoutes[IO](runRequestQ, completedsRef).all),
         runRequestS

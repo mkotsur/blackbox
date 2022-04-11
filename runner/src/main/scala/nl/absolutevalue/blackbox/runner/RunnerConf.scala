@@ -22,4 +22,5 @@ object RunnerConf {
 
 }
 
-case class RunnerConf(dockerUri: URI, mountFolders: MountFolders) derives ConfigReader
+case class RunnerConf(dataSamplesPath: Path, dockerUri: URI, mountFolders: MountFolders)
+    derives ConfigReader
