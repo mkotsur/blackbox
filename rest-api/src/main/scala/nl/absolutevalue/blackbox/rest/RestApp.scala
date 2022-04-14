@@ -28,14 +28,6 @@ object RestApp extends IOApp.Simple {
 
   val run: IO[Nothing] = {
 
-    //TODO: REST / Docker loop:
-    //☑️ 1. POST
-    //☑️ 2. Queue and Stream
-    //☑ 3. Connect stream to runner
-    //☑️ 4. Request -> Reply format
-    //❌ 5. TAPIR
-    //6. Refactor
-
     def blazeServer(routes: HttpRoutes[IO]) = BlazeServerBuilder[IO]
       .bindHttp(8080, "0.0.0.0")
       .withHttpApp(routes.orNotFound)

@@ -50,7 +50,6 @@ class SecureContainer[F[_]: Monad: Async: Logger: Applicative](
 
   private val logger = Logger[F]
 
-  //TODO: extract in conf
   private val httpClient =
     new ZerodepDockerHttpClient.Builder().dockerHost(dockerUri).build()
 
