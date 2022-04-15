@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import cats.implicits.*
 import cats.effect.implicits.*
-import nl.absolutevalue.blackbox.container.SecureContainer.Data
+import nl.absolutevalue.blackbox.container.SecureContainer.{Output, Data}
 import nl.absolutevalue.blackbox.util.TempFiles
 import org.apache.commons.io.FileUtils
 import org.typelevel.log4cats.Logger
@@ -37,7 +37,7 @@ class RestContainerDispatcher[F[_]: Async: Logger](
           Files.write(tempDir.resolve("script.bb"), rr.code.getBytes(StandardCharsets.UTF_8))
         )
       )
-      res <- sc.run(SecureContainer.Script(tempDir, "script.bb", re), Data(dataSamplesPath).some)
+      res <- sc.run(SecureContainer.Script(tempDir, "script.bb", re), Output(dataSamplesPath).some)
     } yield res
 
     for {

@@ -30,7 +30,7 @@ class RestRoutes[F[_]: Monad: MonadThrow: Async](
         res <- Ok(AcceptedResponse(reqUUID.toString))
       } yield res
 
-    case req @ GET -> Root / "completed" =>
+    case GET -> Root / "completed" =>
       for {
         res <- Ok(ref.get)
       } yield res

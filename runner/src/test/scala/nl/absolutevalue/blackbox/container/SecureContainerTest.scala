@@ -8,10 +8,11 @@ import cats.effect.*
 import cats.implicits.*
 import cats.syntax.*
 import nl.absolutevalue.blackbox.container.SecureContainer
-import nl.absolutevalue.blackbox.container.SecureContainer.Data
+import nl.absolutevalue.blackbox.container.SecureContainer.{Data, Output}
 import nl.absolutevalue.blackbox.docker.DockerContainer
 import nl.absolutevalue.blackbox.docker.DockerContainer.State
-import nl.absolutevalue.blackbox.runner.RunnerConf.MountFolders
+import nl.absolutevalue.blackbox.runner.RunnerConf.RemoteFolders
+import nl.absolutevalue.blackbox.util.TempFiles
 import org.scalatest.Checkpoints
 import org.scalatest.funsuite.{AnyFunSuite, AsyncFunSuite}
 import org.scalatest.matchers.should.Matchers
@@ -22,6 +23,7 @@ import java.net.URI
 import java.nio.file.{Path, Paths}
 import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
+import scala.io.Source
 
 class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
 
@@ -30,7 +32,8 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
   override implicit lazy val ioRuntime: IORuntime = cats.effect.unsafe.implicits.global
 
   private val pythonRunWith = SecureContainer.Command(List("python"), "python:3-alpine")
-  private val mntFolders = MountFolders(Paths.get("/tmp/code"), Paths.get("/tmp/data"))
+  private val mntFolders =
+    RemoteFolders(Paths.get("/tmp/code"), Paths.get("/tmp/data"), Paths.get("/tmp/output"))
   private val dockerUri = new URI("unix:///var/run/docker.sock")
 
   test("Should create container") {
@@ -141,7 +144,28 @@ class SecureContainerTest extends AsyncFunSuite with AsyncIOSpec with Matchers:
     )
 
     container
-      .run(script, Data(datasetPath).some)
+      .run(script, dataOpt = Data(datasetPath).some)
       .use { case (stateStream, outputStream) => outputStream.compile.toList }
       .asserting(logs => logs.mkString("\n") shouldBe "Hello World! I'm dataset 1!")
+  }
+
+  test("Capture output file") {
+    val container = new SecureContainer[IO](dockerUri, mntFolders)
+    val datasetPath = Path.of(getClass.getResource("/").toURI)
+    val script = SecureContainer.Command(
+      List("cp", "/tmp/data/dataset1.txt", "/tmp/output/1.txt"),
+      "python:3-alpine"
+    )
+
+    TempFiles
+      .tempDir[IO]
+      .use(outputDir => {
+        val outFile = outputDir.resolve("1.txt")
+        val outSrcR = Resource.fromAutoCloseable(IO(Source.fromFile(outFile.toFile)))
+        container
+          .run(script, dataOpt = Data(datasetPath).some, outputOpt = Output(outputDir).some)
+          .use { case (_, outputStream) => outputStream.compile.drain }
+          .flatMap(_ => outSrcR.use(s => IO(s.mkString)))
+          .asserting(_ shouldBe "Hello World! I'm dataset 1!")
+      })
   }

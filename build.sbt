@@ -17,6 +17,18 @@ ThisBuild / scalacOptions ++= Seq(
   "-source:3.1"
 )
 
+lazy val util = project
+  .in(file("util"))
+  .settings(
+    name := "Utilities",
+    libraryDependencies ++= Seq(
+      deps.commonsIO,
+      deps.catsEffect,
+      deps.test.scalaTest,
+      deps.test.catsEffectTesting
+    ) ++ deps.logging
+  )
+
 lazy val runner = project
   .in(file("runner"))
   .settings(
@@ -28,6 +40,7 @@ lazy val runner = project
       deps.test.catsEffectTesting
     ) ++ deps.dockerJava ++ deps.logging ++ deps.pureConfig
   )
+  .dependsOn(util)
 
 lazy val restApi = project
   .in(file("rest-api"))
@@ -40,7 +53,7 @@ lazy val restApi = project
       deps.test.catsEffectTesting
     ) ++ deps.http4sServer ++ deps.logging ++ deps.pureConfig
   )
-  .dependsOn(runner)
+  .dependsOn(runner, util)
 
 val deps = new {
 
@@ -60,6 +73,8 @@ val deps = new {
   val catsEffect = "org.typelevel" %% "cats-effect" % "3.3.11"
 
   val pureConfig = Seq("com.github.pureconfig" %% "pureconfig-core" % V.pureConfig)
+
+  val commonsIO = "commons-io" % "commons-io" % "2.11.0"
 
   val logging = Seq(
     "org.typelevel" %% "log4cats-slf4j" % "2.2.0",

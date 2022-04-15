@@ -1,7 +1,7 @@
 package nl.absolutevalue.blackbox.runner
 
 import cats.effect.Sync
-import nl.absolutevalue.blackbox.runner.RunnerConf.MountFolders
+import nl.absolutevalue.blackbox.runner.RunnerConf.RemoteFolders
 import pureconfig.ConfigSource
 
 import java.nio.file.Path
@@ -11,7 +11,7 @@ import pureconfig.*
 import java.net.URI
 
 object RunnerConf {
-  case class MountFolders(code: Path, data: Path) derives ConfigReader
+  case class RemoteFolders(code: Path, data: Path, output: Path) derives ConfigReader
 
   def configSrc = ConfigSource.default.at("blackbox.runner")
 
@@ -22,5 +22,5 @@ object RunnerConf {
 
 }
 
-case class RunnerConf(dataSamplesPath: Path, dockerUri: URI, mountFolders: MountFolders)
+case class RunnerConf(dataSamplesPath: Path, dockerUri: URI, mountFolders: RemoteFolders)
     derives ConfigReader

@@ -14,11 +14,11 @@ import com.github.dockerjava.api.command.{CreateContainerCmd, InspectContainerRe
 import com.github.dockerjava.api.model.*
 import com.github.dockerjava.core.DockerClientBuilder
 import com.github.dockerjava.zerodep.ZerodepDockerHttpClient
-import nl.absolutevalue.blackbox.container.SecureContainer.{Artefact, Command, Data}
+import nl.absolutevalue.blackbox.container.SecureContainer.{Artefact, Command, Data, Output}
 import nl.absolutevalue.blackbox.docker.DockerContainer
 import nl.absolutevalue.blackbox.docker.DockerContainer.CommandsExtensions.*
 import nl.absolutevalue.blackbox.docker.DockerContainer.State
-import nl.absolutevalue.blackbox.runner.RunnerConf.MountFolders
+import nl.absolutevalue.blackbox.runner.RunnerConf.RemoteFolders
 import org.typelevel.log4cats.Logger
 
 import java.io.Closeable
@@ -38,9 +38,12 @@ object SecureContainer:
   // Local Path = path on the machine that runs this code.
   case class Data(localPath: Path)
 
+  // Local Path = path on the machine that runs this code.
+  case class Output(localPath: Path)
+
 class SecureContainer[F[_]: Monad: Async: Logger: Applicative](
     dockerUri: URI,
-    mountFolders: MountFolders
+    remoteFolders: RemoteFolders
 ) {
 
   import DockerContainer.State
@@ -59,30 +62,43 @@ class SecureContainer[F[_]: Monad: Async: Logger: Applicative](
       .withDockerHttpClient(httpClient)
       .build()
 
-  def create(script: Artefact, dataOpt: Option[Data] = None): F[DockerContainer] = {
+  def create(
+      script: Artefact,
+      outputOpt: Option[Output] = None,
+      dataOpt: Option[Data] = None
+  ): F[DockerContainer] = {
     import SecureContainer.{Script, Command}
 
-    val (image, command, scriptBinds) = script match {
+    val (image, command, scriptBindOpt) = script match {
       case Script(
             localHome,
             runFile,
             Command(executable, image)
           ) =>
-        val scriptBind =
-          new Bind(localHome.toString, Volume(mountFolders.code.toString), AccessMode.ro)
-        (image, executable :+ mountFolders.code.resolve(runFile).toString, List(scriptBind))
-      case SecureContainer.Command(command, image) => (image, command, Nil)
+        (
+          image,
+          executable :+ remoteFolders.code.resolve(runFile).toString,
+          new Bind(localHome.toString, Volume(remoteFolders.code.toString), AccessMode.ro).some
+        )
+      case Command(command, image) => (image, command, None)
     }
 
-    val dataBinds =
-      dataOpt.map(data =>
-        new Bind(data.localPath.toString, Volume(mountFolders.data.toString), AccessMode.ro)
+    val dataBinds = dataOpt
+      .map(data =>
+        new Bind(data.localPath.toString, Volume(remoteFolders.data.toString), AccessMode.ro)
       )
+      .toList
+
+    val outBind = outputOpt.map(out =>
+      new Bind(out.localPath.toString, Volume(remoteFolders.output.toString), AccessMode.rw)
+    )
 
     val createContainerCmd = dockerClient
       .createContainerCmd(image)
       .withHostConfig(
-        HostConfig.newHostConfig().withBinds((scriptBinds ++ dataBinds.toList).asJava)
+        HostConfig
+          .newHostConfig()
+          .withBinds((dataBinds ++ scriptBindOpt.toList ++ outBind.toList).asJava)
       )
       .withCmd(command.asJava)
       .withNetworkDisabled(true)
@@ -148,10 +164,11 @@ class SecureContainer[F[_]: Monad: Async: Logger: Applicative](
 
   def run(
       script: Artefact,
+      outputOpt: Option[Output] = None,
       dataOpt: Option[Data] = None
   ): Resource[F, (fs2.Stream[F, State], fs2.Stream[F, String])] = {
     val containerF = for {
-      secureDockerCnt <- create(script, dataOpt)
+      secureDockerCnt <- create(script, outputOpt = outputOpt, dataOpt = dataOpt)
       _ <- Sync[F].blocking(dockerClient.startContainerCmd(secureDockerCnt.containerId).exec())
       _ <- logger.debug(s"Container started ${secureDockerCnt.containerId}")
     } yield DockerContainer(secureDockerCnt.containerId)
