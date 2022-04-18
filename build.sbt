@@ -1,5 +1,5 @@
 ThisBuild / version := "0.1"
-ThisBuild / scalaVersion := "3.1.1"
+ThisBuild / scalaVersion := "3.1.2"
 ThisBuild / organization := "nl.absolutevalue"
 
 ThisBuild / scalacOptions ++= Seq(
