@@ -1,5 +1,6 @@
 package nl.absolutevalue.blackbox
 
+import java.nio.file.Path
 import java.time.LocalDateTime
 
 package object rest {
@@ -13,6 +14,7 @@ package object rest {
       stdout: String,
       stderr: String,
       timestamp: LocalDateTime,
-      runRequest: RunRequest
+      runRequest: RunRequest,
+      outputs: List[String]
   )
 }

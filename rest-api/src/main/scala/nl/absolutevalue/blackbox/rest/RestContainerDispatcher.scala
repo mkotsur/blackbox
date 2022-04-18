@@ -25,19 +25,26 @@ class RestContainerDispatcher[F[_]: Async: Logger](
     responsesRef: Ref[F, List[AcceptedResponse]],
     completedsRef: Ref[F, List[RunCompletedResponse]],
     dataSamplesPath: Path,
+    outputsPath: Path,
     sc: SecureContainer[F]
 ) {
 
   def dispatch: ((UUID, RunRequest)) => F[UUID] = { case (requestUUID, rr) =>
+    val outRunDir = outputsPath.resolve(requestUUID.toString)
     def secureContainerWithScriptRes(re: SecureContainer.Command) = for {
-      tempDir <- TempFiles.tempDir[F]
-      _ <- Resource.eval(Logger[F].debug(s"Create temp directory ${tempDir.toString}"))
+      codeTmpDir <- TempFiles.tempDir[F]
+      _ <- Resource.eval(Sync[F].delay(outRunDir.toFile.mkdirs()))
+      _ <- Resource.eval(Logger[F].debug(s"Create temp directory $codeTmpDir"))
       _ <- Resource.eval(
         Sync[F].delay(
-          Files.write(tempDir.resolve("script.bb"), rr.code.getBytes(StandardCharsets.UTF_8))
+          Files.write(codeTmpDir.resolve("script.bb"), rr.code.getBytes(StandardCharsets.UTF_8))
         )
       )
-      res <- sc.run(SecureContainer.Script(tempDir, "script.bb", re), Output(dataSamplesPath).some)
+      res <- sc.run(
+        SecureContainer.Script(codeTmpDir, "script.bb", re),
+        outputOpt = Output(outRunDir).some,
+        dataOpt = Data(dataSamplesPath).some
+      )
     } yield res
 
     for {
@@ -59,6 +66,7 @@ class RestContainerDispatcher[F[_]: Async: Logger](
               case _                                    => None
             }
             _ <- Logger[F].debug(s"Read ${outs.size} lines of code")
+            outRunDirListed <- TempFiles.listDir[F](outRunDir)
             now <- Sync[F].delay(LocalDateTime.now())
             _ <- completedsRef.update(
               _ :+ RunCompletedResponse(
@@ -67,7 +75,8 @@ class RestContainerDispatcher[F[_]: Async: Logger](
                 outs.mkString("\n"),
                 "",
                 now,
-                rr
+                rr,
+                outRunDirListed.map(p => outRunDir.relativize(p).toString)
               )
             )
           } yield ()

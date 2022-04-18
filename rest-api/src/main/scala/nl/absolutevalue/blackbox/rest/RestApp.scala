@@ -44,6 +44,7 @@ object RestApp extends IOApp.Simple {
       sc = new SecureContainer[IO](runnerConf.dockerUri, runnerConf.mountFolders)
 
       dsAbsPath <- Sync[IO].delay(
+        // Because the default value is relative, normalize it first
         runnerConf.dataSamplesPath.toFile.getCanonicalFile.toPath
       )
       _ <- Logger[IO].info(s"Loading data samples from ${dsAbsPath.toString}")
@@ -51,10 +52,13 @@ object RestApp extends IOApp.Simple {
         acceptedsRef,
         completedsRef,
         dsAbsPath,
+        runnerConf.outputsPath,
         sc
       )
       never <- (
-        blazeServer(new RestRoutes[IO](runRequestQ, completedsRef).all),
+        blazeServer(
+          new RestRoutes[IO](runRequestQ, completedsRef, runnerConf.outputsPath).all
+        ),
         runRequestS
           .through(_.parEvalMap(10)(dispatcher.dispatch))
           .handleErrorWith(e => fs2.Stream.eval(logger.error(e)("Error when processing request")))
