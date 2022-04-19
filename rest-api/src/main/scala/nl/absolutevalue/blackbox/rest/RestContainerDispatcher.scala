@@ -31,17 +31,17 @@ class RestContainerDispatcher[F[_]: Async: Logger](
 
   def dispatch: ((UUID, RunRequest)) => F[UUID] = { case (requestUUID, rr) =>
     val outRunDir = outputsPath.resolve(requestUUID.toString)
-    def secureContainerWithScriptRes(re: SecureContainer.Command) = for {
+    def secureContainerWithScriptRes(re: SecureContainer.Command, fileName: String) = for {
       codeTmpDir <- TempFiles.tempDir[F]
       _ <- Resource.eval(Sync[F].delay(outRunDir.toFile.mkdirs()))
       _ <- Resource.eval(Logger[F].debug(s"Create temp directory $codeTmpDir"))
       _ <- Resource.eval(
         Sync[F].delay(
-          Files.write(codeTmpDir.resolve("script.bb"), rr.code.getBytes(StandardCharsets.UTF_8))
+          Files.write(codeTmpDir.resolve(fileName), rr.code.getBytes(StandardCharsets.UTF_8))
         )
       )
       res <- sc.run(
-        SecureContainer.Script(codeTmpDir, "script.bb", re),
+        SecureContainer.Script(codeTmpDir, fileName, re),
         outputOpt = Output(outRunDir).some,
         dataOpt = Data(dataSamplesPath).some
       )
@@ -49,38 +49,58 @@ class RestContainerDispatcher[F[_]: Async: Logger](
 
     for {
       _ <- Logger[F].debug(s"Processing id ${requestUUID.toString} to the run request $rr")
-      runWith <- rr.language match {
-        case "python" => SecureContainer.Command(List("python"), "python:3-alpine").pure[F]
-        case "r"      => SecureContainer.Command(List("Rscript"), "rocker/r-base:4.1.3").pure[F]
+      commandAndFile <- rr.language match {
+        case "python" =>
+          (SecureContainer.Command(List("python"), "python:3-alpine"), "script.py").pure[F]
+        case "r" =>
+          (SecureContainer.Command(List("Rscript"), "rocker/r-base:4.1.3"), "script.R").pure[F]
+        case "r-markdown" =>
+          (
+            SecureContainer
+              .Command(
+                //TODO: unhardcode /tmp/out
+                List(
+                  "Rscript",
+                  "-e",
+                  "rmarkdown::render(commandArgs(trailingOnly=TRUE)[1], quiet = TRUE, output_dir = '/tmp/out', intermediates_dir = '/tmp')"
+                ),
+                "rocker/r-rmd"
+              ),
+            "index.Rmd"
+          )
+            .pure[F]
         case other =>
           Sync[F].raiseError(new RuntimeException(s"Language $other is not supported"))
       }
       acceptedResponse <- for {
-        f <- secureContainerWithScriptRes(runWith).use { case (statesStream, outStream) =>
-          for {
-            outs <- outStream.compile.toList
-            statesStream <- statesStream.compile.toList
-            exitCode = statesStream.last match {
-              case DockerContainer.State.ExitFail(code) => code.some
-              case DockerContainer.State.ExitSuccess    => 0.some
-              case _                                    => None
-            }
-            _ <- Logger[F].debug(s"Read ${outs.size} lines of code")
-            outRunDirListed <- TempFiles.listDir[F](outRunDir)
-            now <- Sync[F].delay(LocalDateTime.now())
-            _ <- completedsRef.update(
-              _ :+ RunCompletedResponse(
-                requestUUID.toString,
-                exitCode,
-                outs.mkString("\n"),
-                "",
-                now,
-                rr,
-                outRunDirListed.map(p => outRunDir.relativize(p).toString)
+        f <- secureContainerWithScriptRes
+          .tupled(commandAndFile)
+          .use { case (statesStream, outStream) =>
+            for {
+              outs <- outStream.compile.toList
+              statesStream <- statesStream.compile.toList
+              exitCode = statesStream.last match {
+                case DockerContainer.State.ExitFail(code) => code.some
+                case DockerContainer.State.ExitSuccess    => 0.some
+                case _                                    => None
+              }
+              _ <- Logger[F].debug(s"Read ${outs.size} lines of code")
+              outRunDirListed <- TempFiles.listDir[F](outRunDir)
+              now <- Sync[F].delay(LocalDateTime.now())
+              _ <- completedsRef.update(
+                _ :+ RunCompletedResponse(
+                  requestUUID.toString,
+                  exitCode,
+                  outs.mkString("\n"),
+                  "",
+                  now,
+                  rr,
+                  outRunDirListed.map(p => outRunDir.relativize(p).toString)
+                )
               )
-            )
-          } yield ()
-        }.start
+            } yield ()
+          }
+          .start
       } yield ()
     } yield requestUUID
   }
