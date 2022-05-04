@@ -52,7 +52,7 @@ object RestApp extends IOApp.Simple {
         acceptedsRef,
         completedsRef,
         dsAbsPath,
-        runnerConf.outputsPath,
+        runnerConf,
         sc
       )
       never <- (

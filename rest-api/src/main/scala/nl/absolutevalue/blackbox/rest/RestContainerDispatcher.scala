@@ -11,7 +11,8 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import cats.implicits.*
 import cats.effect.implicits.*
-import nl.absolutevalue.blackbox.container.SecureContainer.{Output, Data}
+import nl.absolutevalue.blackbox.container.SecureContainer.{Data, Output}
+import nl.absolutevalue.blackbox.runner.RunnerConf
 import nl.absolutevalue.blackbox.util.TempFiles
 import org.apache.commons.io.FileUtils
 import org.typelevel.log4cats.Logger
@@ -25,12 +26,12 @@ class RestContainerDispatcher[F[_]: Async: Logger](
     responsesRef: Ref[F, List[AcceptedResponse]],
     completedsRef: Ref[F, List[RunCompletedResponse]],
     dataSamplesPath: Path,
-    outputsPath: Path,
+    runnerConf: RunnerConf,
     sc: SecureContainer[F]
 ) {
 
   def dispatch: ((UUID, RunRequest)) => F[UUID] = { case (requestUUID, rr) =>
-    val outRunDir = outputsPath.resolve(requestUUID.toString)
+    val outRunDir = runnerConf.outputsPath.resolve(requestUUID.toString)
     def secureContainerWithScriptRes(re: SecureContainer.Command, fileName: String) = for {
       codeTmpDir <- TempFiles.tempDir[F]
       _ <- Resource.eval(Sync[F].delay(outRunDir.toFile.mkdirs()))
@@ -58,11 +59,10 @@ class RestContainerDispatcher[F[_]: Async: Logger](
           (
             SecureContainer
               .Command(
-                //TODO: unhardcode /tmp/out
                 List(
                   "Rscript",
                   "-e",
-                  "rmarkdown::render(commandArgs(trailingOnly=TRUE)[1], quiet = TRUE, output_dir = '/tmp/out', intermediates_dir = '/tmp')"
+                  s"rmarkdown::render(commandArgs(trailingOnly=TRUE)[1], quiet = TRUE, output_dir = '${runnerConf.mountFolders.output}', intermediates_dir = '/tmp')"
                 ),
                 "rocker/r-rmd"
               ),
