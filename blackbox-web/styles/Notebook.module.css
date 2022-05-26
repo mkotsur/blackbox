@@ -1,0 +1,12 @@
+.title,
+.description {
+    text-align: center;
+}
+
+.sourceCode {
+    font-family: Consolas, Menlo, sans-serif;
+}
+
+.sourceCodeInput {
+    font-family: Consolas, Menlo, sans-serif;
+}
