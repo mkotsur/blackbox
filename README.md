@@ -6,7 +6,10 @@
 <p>
 
  <img align="right" height="170" src="./docs/img/black-boxes.jpg" title="Black Boxes" alt="Black Boxes">
-A platform that helps to facilitate responsible access to collected and archived datasets within your organization. It reduces the margin of risk and increases control, trust and awareness among data providers and consumers. Blackbox helps handle data, models and algorithms more responsibly and bring the dilemmas of data protection from moral into practical plain and decide what the rules and responsibilities should be per-project.
+Meet Blackbox - a data exchange platform that helps to facilitate responsible access to collected and archived datasets within your organization. It helps you to:
+* Reduce the margin of risk, increase control, trust and awareness among data providers and consumers;
+* Handle data, models, and algorithms more responsibly;
+* Bring data protection dilemmas from moral into the practical plain of specific rules and responsibilities per-project.
 </p>
 
 ## The big picture
