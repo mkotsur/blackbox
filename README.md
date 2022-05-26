@@ -22,8 +22,6 @@ Companies are increasingly coming under fire for the way they use data. Governme
 <p>
 Values ​​such as "public safety" and "privacy" often conflict. Dilemmas arise when more weight is attached to one concept than another. Therefore, every good data analyst should have virtues such as "respect for the sensitivity of personal data" and "prudence and selectivity in communicating and sharing that data". Education and training in such virtues are crucial. Yet, the environment and technical facilities play a vital role in the ability of data professionals to make responsible choices as well.
 </p>
-<hr/>
-
 
 
 ## Technology ![Run SBT tests](https://github.com/mkotsur/blackbox/actions/workflows/run-sbt-test.yml/badge.svg)
