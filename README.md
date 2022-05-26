@@ -1,5 +1,5 @@
 <h1 align="center">🔲 Blackbox</h1>
- <p align="right">“It is a capital mistake to theorize before one has data.” — Sherlock Holmes</p>
+ <p align="right">"Data is a precious thing and will last longer than the systems themselves." – Tim Berners-Lee</p>
 
 <br/> 
 
