@@ -1,42 +1,55 @@
-## Blackbox 🔲 | ![Run SBT tests](https://github.com/mkotsur/blackbox/actions/workflows/run-sbt-test.yml/badge.svg)
+<h1 align="center">🔲 Blackbox</h1>
+ <p align="right">"Data is a precious thing and will last longer than the systems themselves." – Tim Berners-Lee</p>
 
-**Web interface for Blackbox**: [mkotsur/blackbox-web](https://github.com/mkotsur/blackbox-web)
+<br/> 
 
-Secure container for data exchange. Re-vamped.
-With Scala 3 and Cats Effect 3.
+<p>
+ <img align="right" height="220" src="./docs/img/black-boxes.jpg" title="Black Boxes" alt="Black Boxes">
+Meet Blackbox - a data exchange platform that helps to facilitate responsible access to collected and archived datasets within your organization. It helps you to:
+<ul>
+<li>Reduce the margin of risk, increase control, trust and awareness among data providers and consumers;</li>
+<li>Handle data, models, and algorithms more responsibly;</li>
+<li>Bring data protection dilemmas from moral into the practical plain of specific rules and responsibilities per-project.</li>
+</ul>
+</p>
 
-More info: [sara-nl/data-exchange](https://github.com/sara-nl/data-exchange)
+## The big picture
+
+<p>
+Companies are increasingly coming under fire for the way they use data. Governments have amended many laws and regulations in response to this. GDPR law protects everyone's privacy. Under this law, the invasion of privacy or personal information leakage is punishable with heavy fines.
+</p>
+
+<p>
+Values ​​such as "public safety" and "privacy" often conflict. Dilemmas arise when more weight is attached to one concept than another. Therefore, every good data analyst should have virtues such as "respect for the sensitivity of personal data" and "prudence and selectivity in communicating and sharing that data". Education and training in such virtues are crucial. Yet, the environment and technical facilities play a vital role in the ability of data professionals to make responsible choices as well.
+</p>
 
 
-# Starting the server
+## Technology ![Run SBT tests](https://github.com/mkotsur/blackbox/actions/workflows/run-sbt-test.yml/badge.svg)
 
-Requires Docker to be installed on the host!
+Based on: [sara-nl/data-exchange](https://github.com/sara-nl/data-exchange)
 
-```shell
-sbt "restApi/run"
-```
+### Modules
 
-# Using API
+* [Backend](./backend/): Scala 3, CE3
+* [Frontend](./frontend/): NextJS
 
-```shell
 
-# Submit a run
-curl -X POST localhost:8080/submit -d '{"code": "print(43);", "language": "python"}'
+## Documentation for users
 
-# Returns UUID of accepted run.
-# {"uuid":"da1d5e33-be86-4cc5-8a43-fc0df79b1cb9"}
+*Coming up*
 
-# Get previous runs
-curl http://localhost:8080/completed
+## Documentation for developers
 
-#[
-#  {
-#    "uuid":"da1d5e33-be86-4cc5-8a43-fc0df79b1cb9",
-#    "code":0,
-#    "stdout":"43\n",
-#    "stderr":"",
-#    "timestamp":"2022-04-13T09:55:45.248969",
-#    "runRequest":{"language":"python","code":"print(43);"}
-#  }
-# ]
-```
+
+### Starting server localy
+
+1. Install Docker
+2. Install SBT, NodeJS, yarn
+3. Run in terminal: `cd backend && sbt "restApi/run"`
+4. In a new terminal tab: `cd frontend && yarn install && yarn dev`
+5. Open http://localhost:3000 🎉
+
+
+## Want to know more?
+
+Contact Mike Kotsur ([@mikekotsur](http://twitter.com/mikekotsur)) - [Absolute Value Labs](https://absolutevalue.nl)
