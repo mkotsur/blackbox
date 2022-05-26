@@ -1,8 +1,11 @@
 <h1 align="center">🔲 Blackbox</h1>
  <p align="right">“It is a capital mistake to theorize before one has data.” — Sherlock Holmes</p>
 
+ <br/>
+ <br/>
+
  
- <img align="center" height="200" src="./docs/img/black-boxes.jpg" title="Black Boxes" alt="Black Boxes">
+ <img align="right" height="200" src="./docs/img/black-boxes.jpg" title="Black Boxes" alt="Black Boxes">
 
 <p>
 A platform that helps to facilitate responsible access to collected and archived datasets within your organization. It reduces the margin of risk and increases control, trust and awareness among data providers and consumers. Blackbox helps handle data, models and algorithms more responsibly and bring the dilemmas of data protection from moral into practical plain and decide what the rules and responsibilities should be per-project.
