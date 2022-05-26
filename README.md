@@ -1,7 +1,6 @@
 <h1 align="center">🔲 Blackbox</h1>
- <p align="right">“It is a capital mistake to theorize before one has data.” — Sherlock Holmes</p>
+ <p align="right">*“It is a capital mistake to theorize before one has data.” — Sherlock Holmes*</p>
 
- <br/>
  <br/>
 
  
