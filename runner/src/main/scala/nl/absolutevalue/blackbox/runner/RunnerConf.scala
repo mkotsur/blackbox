@@ -26,5 +26,6 @@ case class RunnerConf(
     outputsPath: Path,
     dataSamplesPath: Path,
     dockerUri: URI,
-    mountFolders: RemoteFolders
+    mountFolders: RemoteFolders,
+    dockerImages: Map[String, String]
 ) derives ConfigReader

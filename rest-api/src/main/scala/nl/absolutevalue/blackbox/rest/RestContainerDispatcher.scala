@@ -50,11 +50,15 @@ class RestContainerDispatcher[F[_]: Async: Logger](
 
     for {
       _ <- Logger[F].debug(s"Processing id ${requestUUID.toString} to the run request $rr")
+      image <- Sync[F].fromOption(
+        runnerConf.dockerImages.get(rr.language),
+        new RuntimeException(s"Could not find a Docker image for ${rr.language}")
+      )
       commandAndFile <- rr.language match {
         case "python" =>
-          (SecureContainer.Command(List("python"), "python:3-alpine"), "script.py").pure[F]
+          (SecureContainer.Command(List("python"), image), "script.py").pure[F]
         case "r" =>
-          (SecureContainer.Command(List("Rscript"), "rocker/r-base:4.1.3"), "script.R").pure[F]
+          (SecureContainer.Command(List("Rscript"), image), "script.R").pure[F]
         case "r-markdown" =>
           (
             SecureContainer
@@ -64,7 +68,7 @@ class RestContainerDispatcher[F[_]: Async: Logger](
                   "-e",
                   s"rmarkdown::render(commandArgs(trailingOnly=TRUE)[1], quiet = TRUE, output_dir = '${runnerConf.mountFolders.output}', intermediates_dir = '/tmp')"
                 ),
-                "rocker/r-rmd"
+                image
               ),
             "index.Rmd"
           )
