@@ -1,5 +1,5 @@
-# 🔲 Blackbox
- -- facilitates responsible access to datasets
+<h1 align="center">🔲 Blackbox</h1>
+ <p align="right">-- facilitates responsible access to datasets</p>
 
 ## The big picture
 
@@ -13,16 +13,18 @@ Values ​​such as "public safety" and "privacy" often conflict. Dilemmas aris
 <hr/>
 <img align="right" height="200" src="./docs/img/black-boxes.jpg" title="Black Boxes" alt="Black Boxes">
 <p>
-Blackbox is an instrument that helps to facilitate responsible access to collected and archived datasets within your organization. It reduces the margin of risk and increases control, trust and awareness among data providers and consumers. Blackbox helps handle data, models and algorithms more responsibly and bring the dilemmas of data protection from moral into practical plains and decide what the rules and responsibilities should be per-project.
+Blackbox is an instrument that helps to facilitate responsible access to collected and archived datasets within your organization. It reduces the margin of risk and increases control, trust and awareness among data providers and consumers. Blackbox helps handle data, models and algorithms more responsibly and bring the dilemmas of data protection from moral into practical plain and decide what the rules and responsibilities should be per-project.
 </p>
 
 
 ## Technology ![Run SBT tests](https://github.com/mkotsur/blackbox/actions/workflows/run-sbt-test.yml/badge.svg)
 
+Based on: [sara-nl/data-exchange](https://github.com/sara-nl/data-exchange)
+
+### Modules
+
 * [Backend](./backend/): Scala 3, CE3
 * [Frontend](./frontend/): NextJS
-
-Based on: [sara-nl/data-exchange](https://github.com/sara-nl/data-exchange)
 
 
 ## Documentation for users
@@ -31,5 +33,16 @@ Based on: [sara-nl/data-exchange](https://github.com/sara-nl/data-exchange)
 
 ## Documentation for developers
 
-*Coming up*
 
+### Starting server localy
+
+1. Install Docker
+2. Install SBT, NodeJS, yarn
+3. Run in terminal: `cd backend && sbt "restApi/run"`
+4. In a new terminal tab: `cd frontend && yarn install && yarn dev`
+5. Open http://localhost:3000 🎉
+
+
+## Want to know more?
+
+Contact Mike Kotsur ([@mikekotsur](http://twitter.com/mikekotsur)) - [Absolute Value Labs](https://absolutevalue.nl)
