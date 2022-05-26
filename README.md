@@ -5,7 +5,7 @@
 
 <p>
 
- <img align="right" height="170" src="./docs/img/black-boxes.jpg" title="Black Boxes" alt="Black Boxes">
+ <img align="right" height="220" src="./docs/img/black-boxes.jpg" title="Black Boxes" alt="Black Boxes">
 Meet Blackbox - a data exchange platform that helps to facilitate responsible access to collected and archived datasets within your organization. It helps you to:
 <ul>
 <li>Reduce the margin of risk, increase control, trust and awareness among data providers and consumers;</li>
