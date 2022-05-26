@@ -1,10 +1,9 @@
 <h1 align="center">🔲 Blackbox</h1>
  <p align="right">“It is a capital mistake to theorize before one has data.” — Sherlock Holmes</p>
 
- 
+<br/> 
 
 <p>
-
  <img align="right" height="220" src="./docs/img/black-boxes.jpg" title="Black Boxes" alt="Black Boxes">
 Meet Blackbox - a data exchange platform that helps to facilitate responsible access to collected and archived datasets within your organization. It helps you to:
 <ul>
