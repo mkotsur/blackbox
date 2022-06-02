@@ -2,6 +2,7 @@ import { EventHandler, FormEvent, useEffect, useState } from 'react'
 import { RunCompletedResp } from './data'
 import styles from '../styles/Notebook.module.css'
 import hljs from 'highlight.js/lib/common'
+import EnvironmentInfo from './Notebook/EnvironmentInfo'
 
 const Notebook = () => {
     const [previousRuns, setPreviousRuns] = useState<RunCompletedResp[]>([])
@@ -158,14 +159,11 @@ const Notebook = () => {
                 </div>
             )}
 
-            <div className="text-center">
-                <h3>Get started by entering a script.</h3>
-                <div>
-                    Data available at: <pre>/tmp/data/world_population.csv</pre>
-                </div>
-                <div>
-                    You can download files placed into: <pre>/tmp/out</pre>
-                </div>
+            <div>
+                <EnvironmentInfo />
+                <h3 className="text-center">
+                    Get started by entering a script.
+                </h3>
 
                 <form onSubmit={runScript}>
                     <div className="form-floating">

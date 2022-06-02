@@ -36,6 +36,7 @@ lazy val runner = project
     libraryDependencies ++= Seq(
       deps.FS2,
       deps.catsEffect,
+      deps.catsEffectFiles,
       deps.test.scalaTest,
       deps.test.catsEffectTesting
     ) ++ deps.dockerJava ++ deps.logging ++ deps.pureConfig
@@ -71,6 +72,8 @@ val deps = new {
   val FS2 = "co.fs2" %% "fs2-core" % "3.2.5"
 
   val catsEffect = "org.typelevel" %% "cats-effect" % "3.3.11"
+
+  val catsEffectFiles = "io.github.akiomik" %% "cats-nio-file" % "1.7.0"
 
   val pureConfig = Seq("com.github.pureconfig" %% "pureconfig-core" % V.pureConfig)
 

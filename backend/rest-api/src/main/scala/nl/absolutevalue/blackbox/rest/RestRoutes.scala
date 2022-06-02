@@ -6,6 +6,9 @@ import cats.effect.syntax.*
 import cats.implicits.*
 import cats.{Monad, MonadThrow}
 import io.circe.generic.auto.*
+import nl.absolutevalue.blackbox.datasets.Datasets
+import nl.absolutevalue.blackbox.runner.RunnerConf
+import nl.absolutevalue.blackbox.runner.RunnerConf.RemoteFolders
 import org.http4s.*
 import org.http4s.circe.*
 import org.http4s.circe.CirceEntityCodec.*
@@ -17,11 +20,22 @@ import org.http4s.server.staticcontent.*
 
 import java.nio.file.{Files, Path}
 import java.util.UUID
+import RestRoutes.*
+import io.circe.{Encoder, Json}
+
+object RestRoutes {
+  case class ContainerInfo(
+      mountFolders: RemoteFolders,
+      datasets: Seq[(Path, Option[Long])]
+  )
+  implicit val encodePath: Encoder[Path] = (a: Path) => Json.fromString(a.toString)
+}
 
 class RestRoutes[F[_]: Monad: MonadThrow: Async](
-    q: Queue[F, (UUID, RunRequest)],
-    `ref`: Ref[F, List[RunCompletedResponse]],
-    outputsPath: Path
+    registerRequest: ((UUID, RunRequest)) => F[Unit],
+    completedsRef: Ref[F, List[RunCompletedResponse]],
+    runnerConf: RunnerConf,
+    datasets: Datasets[F]
 ) extends Http4sDsl[F] {
 
   private val v1: HttpRoutes[F] = HttpRoutes.of[F] {
@@ -29,17 +43,28 @@ class RestRoutes[F[_]: Monad: MonadThrow: Async](
       for {
         rr <- req.as[RunRequest]
         reqUUID <- Sync[F].delay(UUID.randomUUID)
-        _ <- q.offer((reqUUID, rr))
+        _ <- registerRequest((reqUUID, rr))
         res <- Ok(AcceptedResponse(reqUUID.toString))
       } yield res
 
     case GET -> Root / "completed" =>
       for {
-        res <- Ok(ref.get)
+        res <- Ok(completedsRef.get)
+      } yield res
+
+    case GET -> Root / "environment" =>
+      for {
+        datasetsPaths <- datasets.list
+        res <- Ok(
+          ContainerInfo(
+            runnerConf.mountFolders,
+            datasetsPaths
+          )
+        )
       } yield res
   }
 
-  private val outputs: HttpRoutes[F] = fileService(FileService.Config(outputsPath.toString()))
+  private val outputs: HttpRoutes[F] = fileService(FileService.Config(runnerConf.toString))
 
   val all: HttpRoutes[F] = Router(
     "outputs" -> outputs,

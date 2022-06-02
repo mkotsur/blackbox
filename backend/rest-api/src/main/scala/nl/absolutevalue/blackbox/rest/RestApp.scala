@@ -15,8 +15,10 @@ import org.http4s.circe.*
 import io.circe.generic.auto.*
 import org.http4s.dsl.io.*
 import cats.implicits.*
+import cats.nio.file.Files
 import cats.syntax.*
 import nl.absolutevalue.blackbox.container.SecureContainer
+import nl.absolutevalue.blackbox.datasets.Datasets
 import nl.absolutevalue.blackbox.rest.RestContainerDispatcher
 import nl.absolutevalue.blackbox.runner.RunnerConf
 
@@ -25,6 +27,7 @@ import java.util.UUID
 object RestApp extends IOApp.Simple {
 
   implicit val logger: SelfAwareStructuredLogger[IO] = Slf4jLogger.getLogger[IO]
+  implicit val filesOps: Files[IO] = new Files[IO]
 
   val run: IO[Nothing] = {
 
@@ -42,6 +45,7 @@ object RestApp extends IOApp.Simple {
       completedsRef <- Ref[IO].of[List[RunCompletedResponse]](Nil)
       runnerConf <- RunnerConf.loadF[IO]
       sc = new SecureContainer[IO](runnerConf.dockerUri, runnerConf.mountFolders)
+      datasets = new Datasets[IO](runnerConf.dataSamplesPath)
 
       dsAbsPath <- Sync[IO].delay(
         // Because the default value is relative, normalize it first
@@ -57,7 +61,12 @@ object RestApp extends IOApp.Simple {
       )
       never <- (
         blazeServer(
-          new RestRoutes[IO](runRequestQ, completedsRef, runnerConf.outputsPath).all
+          new RestRoutes[IO](
+            registerRequest = runRequestQ.offer,
+            completedsRef,
+            runnerConf,
+            datasets
+          ).all
         ),
         runRequestS
           .through(_.parEvalMap(10)(dispatcher.dispatch))
