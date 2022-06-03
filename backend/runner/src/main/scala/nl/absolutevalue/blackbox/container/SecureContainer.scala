@@ -32,13 +32,13 @@ object SecureContainer:
   trait Artefact
   case class Command(command: List[String], image: String) extends Artefact
 
-  // Local Home = path on the machine that runs this code.
+  // VM Home = path on the machine that runs Docker daemon.
   case class Script(localHome: Path, runFile: String, runWith: Command) extends Artefact
 
-  // Local Path = path on the machine that runs this code.
+  // VM Path = path on the machine that runs Docker daemon.
   case class Data(localPath: Path)
 
-  // Local Path = path on the machine that runs this code.
+  // VM Path = path on the machine that runs Docker daemon.
   case class Output(localPath: Path)
 
 class SecureContainer[F[_]: Monad: Async: Logger: Applicative](
