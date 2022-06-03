@@ -64,7 +64,9 @@ class RestRoutes[F[_]: Monad: MonadThrow: Async](
       } yield res
   }
 
-  private val outputs: HttpRoutes[F] = fileService(FileService.Config(runnerConf.toString))
+  private val outputs: HttpRoutes[F] = fileService(
+    FileService.Config(runnerConf.outputsPath.toString)
+  )
 
   val all: HttpRoutes[F] = Router(
     "outputs" -> outputs,

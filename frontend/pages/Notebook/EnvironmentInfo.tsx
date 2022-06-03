@@ -53,7 +53,7 @@ const EnvironmentInfo = () => {
                                         </td>
                                         <td className="text-left">
                                             <code className="text-left">
-                                                {dsInfos.mountFolders.output +
+                                                {dsInfos.mountFolders.data +
                                                     '/' +
                                                     path}
                                             </code>
