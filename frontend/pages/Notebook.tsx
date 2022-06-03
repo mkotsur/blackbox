@@ -1,8 +1,19 @@
 import { EventHandler, FormEvent, useEffect, useState } from 'react'
-import { RunCompletedResp } from './data'
 import styles from '../styles/Notebook.module.css'
 import hljs from 'highlight.js/lib/common'
 import EnvironmentInfo from './Notebook/EnvironmentInfo'
+
+type RunCompletedResp = {
+    uuid: string
+    stdout: string
+    code: number
+    timestamp: Date
+    runRequest: {
+        language: string
+        code: string
+    }
+    outputs: string[]
+}
 
 const Notebook = () => {
     const [previousRuns, setPreviousRuns] = useState<RunCompletedResp[]>([])
@@ -128,11 +139,15 @@ const Notebook = () => {
                                 {completedRunResp && (
                                     <ul className="list-group list-group-horizontal">
                                         {completedRunResp.outputs.map((o) => (
-                                            <li className="list-group-item fs-6">
+                                            <li
+                                                key={completedRunResp.uuid}
+                                                className="list-group-item fs-6"
+                                            >
                                                 <i className="bi bi-file-arrow-down"></i>
                                                 &nbsp;&nbsp;
                                                 <a
                                                     target="_blank"
+                                                    rel="noreferrer"
                                                     href={
                                                         '/api/outputs/' +
                                                         completedRunResp.uuid +
