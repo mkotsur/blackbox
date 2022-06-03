@@ -1,0 +1,26 @@
+services:
+  backend:
+    build: ./backend
+    image: blackbox/backend
+    restart: "always"
+    ports:
+      - 8080:8080
+    environment:
+      RDX_DATA_SAMPLES_PATH: /tmp/data
+      RDX_PYTHON_DOCKER_IMAGE: $RDX_PYTHON_DOCKER_IMAGE
+      RDX_R_DOCKER_IMAGE: $RDX_R_DOCKER_IMAGE
+      RDX_R_MARKDOWN_DOCKER_IMAGE: $RDX_R_MARKDOWN_DOCKER_IMAGE
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/script:/tmp/script
+      - /tmp/rdx-outputs:/tmp/rdx-outputs
+      - ${RDX_DATA_SAMPLES_PATH}:/tmp/data      
+  frontend:
+    depends_on: [backend]
+    build: ./frontend
+    image: blackbox/frontend
+    restart: "always"
+    ports:
+      - 3000:3000
+    environment:
+      BB_BACKEND_URL: http://backend:8080
