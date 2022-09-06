@@ -34,7 +34,7 @@ const EnvironmentInfo = () => {
 
     useEffect(() => {
         updateAvailableDatasets().catch(console.error)
-    }, [])
+    })
 
     return (
         <div className="container py-5">
