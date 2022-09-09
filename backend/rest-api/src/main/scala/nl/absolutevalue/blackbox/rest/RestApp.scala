@@ -15,7 +15,6 @@ import org.http4s.circe.*
 import io.circe.generic.auto.*
 import org.http4s.dsl.io.*
 import cats.implicits.*
-import cats.nio.file.Files
 import cats.syntax.*
 import nl.absolutevalue.blackbox.container.SecureContainer
 import nl.absolutevalue.blackbox.datasets.Datasets
@@ -27,7 +26,6 @@ import java.util.UUID
 object RestApp extends IOApp.Simple {
 
   implicit val logger: SelfAwareStructuredLogger[IO] = Slf4jLogger.getLogger[IO]
-  implicit val filesOps: Files[IO] = new Files[IO]
 
   val run: IO[Nothing] = {
 

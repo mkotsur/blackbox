@@ -35,8 +35,8 @@ lazy val runner = project
     name := "Runner",
     libraryDependencies ++= Seq(
       deps.FS2,
+      deps.fs2IO,
       deps.catsEffect,
-      deps.catsEffectFiles,
       deps.test.scalaTest,
       deps.test.catsEffectTesting
     ) ++ deps.dockerJava ++ deps.logging ++ deps.pureConfig
@@ -70,6 +70,8 @@ val deps = new {
   )
 
   val FS2 = "co.fs2" %% "fs2-core" % "3.2.13"
+
+  val fs2IO = "co.fs2" %% "fs2-io" % "3.2.13"
 
   val catsEffect = "org.typelevel" %% "cats-effect" % "3.3.14"
 

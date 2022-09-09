@@ -53,15 +53,14 @@ class RestRoutes[F[_]: Monad: MonadThrow: Async](
       } yield res
 
     case GET -> Root / "environment" =>
-      for {
-        datasetsPaths <- datasets.list
-        res <- Ok(
+      datasets.list.use(paths =>
+        Ok(
           ContainerInfo(
             runnerConf.mountFolders,
-            datasetsPaths
+            paths
           )
         )
-      } yield res
+      )
   }
 
   private val outputs: HttpRoutes[F] = fileService(
