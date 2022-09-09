@@ -1,5 +1,25 @@
 # Common issues
 
+## Docker socket permission and connectivity
+
+At this moment (v0.1), Blackbox's process needs direct access to the socket of Docker service (`/var/run/docker.sock`).
+
+**Sympthom**
+
+```
+java.lang.RuntimeException: java.io.IOException: com.sun.jna.LastErrorException: [61] Connection refused
+```
+
+or
+
+```
+java.lang.RuntimeException: java.io.IOException: com.sun.jna.LastErrorException: [13] Permission denied
+```
+
+**Solution**
+
+Ensure that Docker service is up and running and the user running Blackbox has got `rw` permissions on the socket file.
+
 ## Data samples and/or outputs paths are not mountable
 
 **Symptom:**
