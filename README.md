@@ -1,7 +1,7 @@
 <h1 align="center">🔲 Blackbox</h1>
  <p align="right">"Data is a precious thing and will last longer than the systems themselves." – Tim Berners-Lee</p>
 
-<br/> 
+<br/>
 
 <p>
  <img align="right" height="220" src="./docs/img/black-boxes.jpg" title="Black Boxes" alt="Black Boxes">
@@ -23,23 +23,20 @@ Companies are increasingly coming under fire for the way they use data. Governme
 Values ​​such as "public safety" and "privacy" often conflict. Dilemmas arise when more weight is attached to one concept than another. Therefore, every good data analyst should have virtues such as "respect for the sensitivity of personal data" and "prudence and selectivity in communicating and sharing that data". Education and training in such virtues are crucial. Yet, the environment and technical facilities play a vital role in the ability of data professionals to make responsible choices as well.
 </p>
 
-
 ## Technology ![Run SBT tests](https://github.com/mkotsur/blackbox/actions/workflows/run-sbt-test.yml/badge.svg)
 
 Based on: [sara-nl/data-exchange](https://github.com/sara-nl/data-exchange)
 
 ### Modules
 
-* [Backend](./backend/): Scala 3, CE3
-* [Frontend](./frontend/): NextJS
-
+- [Backend](./backend/): Scala 3, CE3
+- [Frontend](./frontend/): NextJS
 
 ## Documentation for users
 
-*Coming up*
+- [Common Issues](./docs/common-issues.md)
 
 ## Documentation for developers
-
 
 ### Starting server localy
 
@@ -48,7 +45,6 @@ Based on: [sara-nl/data-exchange](https://github.com/sara-nl/data-exchange)
 3. Run in terminal: `cd backend && sbt "restApi/run"`
 4. In a new terminal tab: `cd frontend && yarn install && yarn dev`
 5. Open http://localhost:3000 🎉
-
 
 ## Want to know more?
 
