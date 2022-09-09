@@ -4,7 +4,7 @@
 
 At this moment (v0.1), Blackbox's process needs direct access to the socket of Docker service (`/var/run/docker.sock`).
 
-**Sympthom**
+**Symptom**
 
 ```
 java.lang.RuntimeException: java.io.IOException: com.sun.jna.LastErrorException: [61] Connection refused
