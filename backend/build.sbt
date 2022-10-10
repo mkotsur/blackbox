@@ -1,6 +1,6 @@
 name := "blackbox-backend"
 ThisBuild / version := "0.1"
-ThisBuild / scalaVersion := "3.3.0"
+ThisBuild / scalaVersion := "3.3.1"
 ThisBuild / organization := "nl.absolutevalue"
 
 ThisBuild / scalacOptions ++= Seq(
@@ -15,7 +15,7 @@ ThisBuild / scalacOptions ++= Seq(
   "-Ykind-projector", // allow `*` as wildcard to be compatible with kind projector
   "-Xfatal-warnings", // fail the compilation if there are any warnings
   "-Xmigration", // warn about constructs whose behavior may have changed since version
-  "-source:3.1"
+  "-source:3.2"
 )
 
 lazy val util = project
@@ -65,6 +65,7 @@ val deps = new {
     val circe = "0.15.0-M1"
     val pureConfig = "0.17.4"
     val dockerJava = "3.2.13"
+    val fs2 = "3.3.0"
   }
 
   val dockerJava = Seq("docker-java", "docker-java-transport-zerodep").map(

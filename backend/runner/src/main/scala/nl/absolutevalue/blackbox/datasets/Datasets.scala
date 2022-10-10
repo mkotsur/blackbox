@@ -9,6 +9,7 @@ import scala.jdk.CollectionConverters.*
 import fs2.io.file.{Files, Path}
 import cats.implicits.*
 import nl.absolutevalue.blackbox.util.TempFiles
+import scala.collection.immutable.Seq
 
 import java.util.stream.Collectors
 import scala.Tuple.FlatMap

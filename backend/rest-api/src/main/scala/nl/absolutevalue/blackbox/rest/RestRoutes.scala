@@ -24,6 +24,8 @@ import RestRoutes.*
 import fs2.io.file.Files
 import io.circe.{Encoder, Json}
 
+import scala.collection.immutable.Seq
+
 object RestRoutes {
   case class ContainerInfo(
       mountFolders: RemoteFolders,
