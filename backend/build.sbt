@@ -1,5 +1,6 @@
+name := "blackbox-backend"
 ThisBuild / version := "0.1"
-ThisBuild / scalaVersion := "3.2.0"
+ThisBuild / scalaVersion := "3.3.0"
 ThisBuild / organization := "nl.absolutevalue"
 
 ThisBuild / scalacOptions ++= Seq(
@@ -59,9 +60,10 @@ lazy val restApi = project
 val deps = new {
 
   lazy val V = new {
-    val http4s = "0.23.11"
+    val http4s = "0.23.22"
+    val http4sBlaze = "0.23.15"
     val circe = "0.15.0-M1"
-    val pureConfig = "0.17.1"
+    val pureConfig = "0.17.4"
     val dockerJava = "3.2.13"
   }
 
@@ -69,11 +71,11 @@ val deps = new {
     "com.github.docker-java" % _ % V.dockerJava
   )
 
-  val FS2 = "co.fs2" %% "fs2-core" % "3.2.13"
+  val FS2 = "co.fs2" %% "fs2-core" % "3.7.0"
 
-  val fs2IO = "co.fs2" %% "fs2-io" % "3.2.13"
+  val fs2IO = "co.fs2" %% "fs2-io" % "3.7.0"
 
-  val catsEffect = "org.typelevel" %% "cats-effect" % "3.3.14"
+  val catsEffect = "org.typelevel" %% "cats-effect" % "3.5.1"
 
   val catsEffectFiles = "io.github.akiomik" %% "cats-nio-file" % "1.7.0"
 
@@ -82,17 +84,20 @@ val deps = new {
   val commonsIO = "commons-io" % "commons-io" % "2.11.0"
 
   val logging = Seq(
-    "org.typelevel" %% "log4cats-slf4j" % "2.2.0",
-    "org.slf4j" % "slf4j-simple" % "2.0.0"
+    "org.typelevel" %% "log4cats-slf4j" % "2.6.0",
+    "org.slf4j" % "slf4j-simple" % "2.0.7"
   )
 
   val http4sServer =
-    Seq("http4s-dsl", "http4s-blaze-server", "http4s-circe").map(
-      "org.http4s" %% _ % V.http4s
-    ) :+ "io.circe" %% "circe-generic" % V.circe
+    Seq(
+      "org.http4s" %% "http4s-dsl" % V.http4s,
+      "org.http4s" %% "http4s-blaze-server" % V.http4sBlaze,
+      "org.http4s" %% "http4s-circe" % V.http4s,
+      "io.circe" %% "circe-generic" % V.circe
+    )
 
   val test = new {
-    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.13" % "test"
-    val catsEffectTesting = "org.typelevel" %% "cats-effect-testing-scalatest" % "1.4.0"
+    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.16" % "test"
+    val catsEffectTesting = "org.typelevel" %% "cats-effect-testing-scalatest" % "1.5.0"
   }
 }

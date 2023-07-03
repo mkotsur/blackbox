@@ -18,9 +18,10 @@ import org.http4s.implicits.*
 import org.http4s.server.Router
 import org.http4s.server.staticcontent.*
 
-import java.nio.file.{Files, Path}
+import java.nio.file.Path
 import java.util.UUID
 import RestRoutes.*
+import fs2.io.file.Files
 import io.circe.{Encoder, Json}
 
 object RestRoutes {
@@ -31,7 +32,7 @@ object RestRoutes {
   implicit val encodePath: Encoder[Path] = (a: Path) => Json.fromString(a.toString)
 }
 
-class RestRoutes[F[_]: Monad: MonadThrow: Async](
+class RestRoutes[F[_]: Monad: MonadThrow: Async: Files](
     registerRequest: ((UUID, RunRequest)) => F[Unit],
     completedsRef: Ref[F, List[RunCompletedResponse]],
     runnerConf: RunnerConf,
@@ -63,8 +64,9 @@ class RestRoutes[F[_]: Monad: MonadThrow: Async](
       )
   }
 
-  private val outputs: HttpRoutes[F] = fileService(
-    FileService.Config(runnerConf.outputsPath.toString)
+
+  private val outputs: HttpRoutes[F] = fileService[F](
+    FileService.Config[F](runnerConf.outputsPath.toString)
   )
 
   val all: HttpRoutes[F] = Router(

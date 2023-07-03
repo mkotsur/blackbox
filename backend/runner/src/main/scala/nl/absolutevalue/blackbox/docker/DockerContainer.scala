@@ -40,7 +40,7 @@ object DockerContainer {
 
     extension (command: LogContainerCmd) {
       def execF[F[_]: Monad: Logger](
-          dispatcher: Dispatcher[F],
+          disp: Dispatcher[F],
           q: cats.effect.std.Queue[F, Option[String]]
       ): ResultCallback.Adapter[Frame] = {
         import cats.effect.syntax.*
@@ -52,17 +52,17 @@ object DockerContainer {
               override def onNext(item: Frame): Unit = {
                 super.onNext(item)
                 val line = new String(item.getPayload)
-                dispatcher.unsafeRunSync(q.offer(line.some))
+                disp.unsafeRunSync(q.offer(line.some))
               }
 
               override def onComplete(): Unit = {
                 super.onComplete()
-                dispatcher.unsafeRunAndForget(q.offer(None))
+                disp.unsafeRunAndForget(q.offer(None))
               }
 
               override def onError(throwable: Throwable): Unit = {
                 super.onError(throwable)
-                dispatcher.unsafeRunSync(Logger[F].error(throwable)("Error during logs streaming"))
+                disp.unsafeRunSync(Logger[F].error(throwable)("Error during logs streaming"))
               }
             }
           )

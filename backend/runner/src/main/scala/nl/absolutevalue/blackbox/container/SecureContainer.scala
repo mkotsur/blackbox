@@ -151,7 +151,7 @@ class SecureContainer[F[_]: Monad: Async: Logger: Applicative](
       .withTimestamps(false)
 
     for {
-      dispatcher <- fs2.Stream.resource(Dispatcher[F])
+      dispatcher <- fs2.Stream.resource(Dispatcher.parallel[F])
       q <- fs2.Stream.eval(Queue.unbounded[F, Option[String]])
       _ <- fs2.Stream.eval(
         Async[F].delay(
