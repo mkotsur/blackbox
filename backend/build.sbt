@@ -60,11 +60,11 @@ lazy val restApi = project
 val deps = new {
 
   lazy val V = new {
-    val http4s = "0.23.22"
+    val http4s = "0.23.23"
     val http4sBlaze = "0.23.15"
     val circe = "0.15.0-M1"
     val pureConfig = "0.17.4"
-    val dockerJava = "3.2.13"
+    val dockerJava = "3.2.14"
     val fs2 = "3.3.0"
   }
 
@@ -86,7 +86,7 @@ val deps = new {
 
   val logging = Seq(
     "org.typelevel" %% "log4cats-slf4j" % "2.6.0",
-    "org.slf4j" % "slf4j-simple" % "2.0.7"
+    "org.slf4j" % "slf4j-simple" % "2.0.9"
   )
 
   val http4sServer =
@@ -98,7 +98,7 @@ val deps = new {
     )
 
   val test = new {
-    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.16" % "test"
+    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.17" % "test"
     val catsEffectTesting = "org.typelevel" %% "cats-effect-testing-scalatest" % "1.5.0"
   }
 }
