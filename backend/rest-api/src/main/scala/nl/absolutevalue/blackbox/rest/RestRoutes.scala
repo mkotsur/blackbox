@@ -17,6 +17,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits.*
 import org.http4s.server.Router
 import org.http4s.server.staticcontent.*
+import scala.collection.immutable.Seq
 
 import java.nio.file.Path
 import java.util.UUID

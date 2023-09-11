@@ -15,6 +15,7 @@ import java.util.stream.Collectors
 import scala.Tuple.FlatMap
 import scala.jdk.CollectionConverters.*
 import cats.implicits.*
+import scala.collection.immutable.Seq
 
 import java.util.stream.Stream as JStream
 
