@@ -38,6 +38,7 @@ lazy val utilStorage = project
       deps.catsEffect,
       deps.test.scalaTest,
       deps.test.catsEffectTesting,
+      deps.test.scalaMockito,
       deps.FS2,
       deps.fs2IO,
       deps.betterFiles,
@@ -133,7 +134,8 @@ val deps = new {
 
   val test = new {
     val scalaTest = "org.scalatest" %% "scalatest" % "3.2.17" % "test"
-    val catsEffectTesting = "org.typelevel" %% "cats-effect-testing-scalatest" % "1.5.0"
+    val catsEffectTesting = "org.typelevel" %% "cats-effect-testing-scalatest" % "1.5.0" % "test"
+    val scalaMockito = "org.scalatestplus" %% "mockito-4-11" % "3.2.17.0" % "test"
   }
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"

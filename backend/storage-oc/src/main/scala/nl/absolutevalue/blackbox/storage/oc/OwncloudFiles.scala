@@ -23,6 +23,5 @@ object OwncloudFiles {
         resources.asScala.toList.tail // Skip the folder/file itself
       }
     }
-
   }
 }
