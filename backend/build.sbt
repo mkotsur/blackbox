@@ -30,6 +30,22 @@ lazy val util = project
     ) ++ deps.logging
   )
 
+lazy val utilStorage = project
+  .in(file("storage-oc"))
+  .settings(
+    name := "Storage Owncloud",
+    libraryDependencies ++= Seq(
+      deps.catsEffect,
+      deps.test.scalaTest,
+      deps.test.catsEffectTesting,
+      deps.FS2,
+      deps.fs2IO,
+      deps.betterFiles,
+      deps.scalaUri
+    ) ++ deps.pureConfig ++ deps.logging ++ deps.sardine
+      ++ deps.circeAll
+  )
+
 lazy val runner = project
   .in(file("runner"))
   .settings(
@@ -80,7 +96,10 @@ val deps = new {
 
   val catsEffectFiles = "io.github.akiomik" %% "cats-nio-file" % "1.7.0"
 
-  val pureConfig = Seq("com.github.pureconfig" %% "pureconfig-core" % V.pureConfig)
+  val pureConfig = Seq(
+    "com.github.pureconfig" %% "pureconfig-core" % V.pureConfig,
+    "com.github.pureconfig" %% "pureconfig-cats" % "0.17.4"
+  )
 
   val commonsIO = "commons-io" % "commons-io" % "2.11.0"
 
@@ -89,16 +108,33 @@ val deps = new {
     "org.slf4j" % "slf4j-simple" % "2.0.9"
   )
 
+  val circeGeneric = "io.circe" %% "circe-generic" % V.circe
+
+  val circeAll = Seq(
+    "io.circe" %% "circe-core",
+    "io.circe" %% "circe-parser"
+  ).map(_ % V.circe) ++ Seq(circeGeneric)
+
   val http4sServer =
     Seq(
       "org.http4s" %% "http4s-dsl" % V.http4s,
       "org.http4s" %% "http4s-blaze-server" % V.http4sBlaze,
-      "org.http4s" %% "http4s-circe" % V.http4s,
-      "io.circe" %% "circe-generic" % V.circe
-    )
+      "org.http4s" %% "http4s-circe" % V.http4s
+    ) :+ circeGeneric
+
+  val sardine = Seq(
+    "com.github.lookfirst" % "sardine" % "5.9",
+    "javax.xml.bind" % "jaxb-api" % "2.4.0-b180830.0359",
+    "javax.activation" % "activation" % "1.1.1",
+    "org.glassfish.jaxb" % "jaxb-runtime" % "2.4.0-b180830.0438"
+  )
+
+  val scalaUri = "io.lemonlabs" %% "scala-uri" % "4.0.3"
 
   val test = new {
     val scalaTest = "org.scalatest" %% "scalatest" % "3.2.17" % "test"
     val catsEffectTesting = "org.typelevel" %% "cats-effect-testing-scalatest" % "1.5.0"
   }
+
+  val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"
 }
