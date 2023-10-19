@@ -1,6 +1,5 @@
 package nl.absolutevalue.blackbox.storage.oc.conf
 
-import nl.absolutevalue.blackbox.storage.oc.conf.OwncloudConf.{ClientConf, WebdavBase}
 import pureconfig.{ConfigReader, ConfigSource}
 import pureconfig.generic.derivation.default.*
 import pureconfig.module.cats.syntax.*

@@ -4,10 +4,6 @@ import cats.data.Kleisli
 import cats.effect.{IO, IOApp, Resource}
 import com.github.sardine.{DavResource, Sardine}
 import com.typesafe.config.Config
-import nl.absolutevalue.blackbox.storage.oc.conf.OwncloudConf
-import nl.absolutevalue.blackbox.storage.oc.conf.OwncloudConf.WebdavBase
-import nl.absolutevalue.blackbox.storage.oc.path.WebdavPath
-import nl.absolutevalue.blackbox.storage.oc.webdav.Webdav
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.typelevel.log4cats.{Logger, SelfAwareStructuredLogger}
 
