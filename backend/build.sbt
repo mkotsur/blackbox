@@ -47,6 +47,23 @@ lazy val utilStorage = project
       ++ deps.circeAll
   )
 
+lazy val utilFlow = project
+  .in(file("flow-drone"))
+  .settings(
+    name := "Flow Drone",
+    libraryDependencies ++= Seq(
+      deps.catsEffect,
+      deps.test.scalaTest,
+      deps.test.catsEffectTesting,
+      deps.test.scalaMockito,
+      deps.FS2,
+      deps.fs2IO,
+      deps.betterFiles,
+      deps.scalaUri
+    ) ++ deps.pureConfig ++ deps.logging ++ deps.sardine
+      ++ deps.circeAll
+  )
+
 lazy val runner = project
   .in(file("runner"))
   .settings(
