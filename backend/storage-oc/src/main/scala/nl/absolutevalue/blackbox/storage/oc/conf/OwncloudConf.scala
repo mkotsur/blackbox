@@ -4,6 +4,7 @@ import pureconfig.{ConfigReader, ConfigSource}
 import pureconfig.generic.derivation.default.*
 import pureconfig.module.cats.syntax.*
 import cats.effect.Sync
+import nl.absolutevalue.blackbox.storage.oc.conf.OwncloudConf.WebdavBase
 
 import java.net.URI
 import scala.concurrent.duration.FiniteDuration

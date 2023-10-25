@@ -4,6 +4,9 @@ import cats.data.Kleisli
 import cats.effect.{IO, IOApp, Resource}
 import com.github.sardine.{DavResource, Sardine}
 import com.typesafe.config.Config
+import nl.absolutevalue.blackbox.storage.oc.conf.OwncloudConf
+import nl.absolutevalue.blackbox.storage.oc.path.WebdavPath
+import nl.absolutevalue.blackbox.storage.oc.webdav.Webdav
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.typelevel.log4cats.{Logger, SelfAwareStructuredLogger}
 
@@ -22,16 +25,15 @@ object ListingDemo extends IOApp.Simple {
 
     type Deps = (Sardine, OwncloudConf)
 
-    val filesListing = OwncloudFiles.listTopLevel[IO]("/").
-      tapWith { case ((_, wdConf), drr) =>
-        drr.map { dr =>
-          WebdavPath(
-            wdConf.serverUri,
-            wdConf.serverSuffix,
-            Some(dr.getPath.replaceFirst(wdConf.serverSuffix, ""))
-          )
-        }
+    val filesListing = OwncloudFiles.listTopLevel[IO]("/").tapWith { case ((_, wdConf), drr) =>
+      drr.map { dr =>
+        WebdavPath(
+          wdConf.serverUri,
+          wdConf.serverSuffix,
+          Some(dr.getPath.replaceFirst(wdConf.serverSuffix, ""))
+        )
       }
+    }
 
     val dataRes = for {
       _ <- Kleisli.ask[Resource[IO, *], OwncloudConf]

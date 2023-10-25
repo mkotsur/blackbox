@@ -3,6 +3,8 @@ package nl.absolutevalue.blackbox.storage.oc
 import cats.data.Kleisli
 import cats.effect.Sync
 import com.github.sardine.{DavResource, Sardine}
+import nl.absolutevalue.blackbox.storage.oc.conf.OwncloudConf.WebdavBase
+
 import scala.jdk.CollectionConverters.*
 object OwncloudFiles {
 

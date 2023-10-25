@@ -3,6 +3,7 @@ package nl.absolutevalue.blackbox.storage.oc.webdav
 import cats.data.Kleisli
 import cats.effect.{IO, Resource, Sync}
 import com.github.sardine.{DavResource, Sardine, SardineFactory}
+import nl.absolutevalue.blackbox.storage.oc.conf.OwncloudConf
 
 object Webdav {
 
