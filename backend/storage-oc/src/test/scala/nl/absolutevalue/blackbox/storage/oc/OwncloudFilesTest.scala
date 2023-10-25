@@ -5,7 +5,6 @@ import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.effect.unsafe.IORuntime
 import com.github.sardine.impl.SardineImpl
 import com.github.sardine.{DavResource, Sardine}
-import nl.absolutevalue.blackbox.storage.oc.conf.OwncloudConf.WebdavBase
 import org.scalatest.funsuite.AsyncFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar

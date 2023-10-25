@@ -47,6 +47,25 @@ lazy val utilStorage = project
       ++ deps.circeAll
   )
 
+lazy val utilFlow = project
+  .in(file("flow-gh"))
+  .settings(
+    // Should it become Flow Github? ;-)
+    name := "Flow Github",
+    libraryDependencies ++= Seq(
+      deps.catsEffect,
+      deps.test.scalaTest,
+      deps.test.catsEffectTesting,
+      deps.test.scalaMockito,
+      deps.FS2,
+      deps.fs2IO,
+      deps.betterFiles,
+      deps.scalaUri,
+      deps.github4s
+    ) ++ deps.pureConfig ++ deps.logging ++ deps.sardine
+      ++ deps.circeAll
+  )
+
 lazy val runner = project
   .in(file("runner"))
   .settings(
@@ -131,6 +150,8 @@ val deps = new {
   )
 
   val scalaUri = "io.lemonlabs" %% "scala-uri" % "4.0.3"
+
+  val github4s = "com.47deg" %% "github4s" % "0.32.0"
 
   val test = new {
     val scalaTest = "org.scalatest" %% "scalatest" % "3.2.17" % "test"
