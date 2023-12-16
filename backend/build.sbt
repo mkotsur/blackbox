@@ -47,6 +47,24 @@ lazy val utilStorage = project
       ++ deps.circeAll
   )
 
+lazy val storageAzure = project
+  .in(file("storage-azure"))
+  .settings(
+    name := "Storage Azure",
+    libraryDependencies ++= Seq(
+      deps.catsEffect,
+      deps.test.scalaTest,
+      deps.test.catsEffectTesting,
+      deps.test.scalaMockito,
+      deps.FS2,
+      deps.fs2IO,
+      deps.betterFiles,
+      deps.scalaUri,
+      deps.fs2FTP
+    ) ++ deps.pureConfig ++ deps.logging ++ deps.sardine
+      ++ deps.circeAll ++ deps.azureStorageBlob
+  )
+
 lazy val utilFlow = project
   .in(file("flow-gh"))
   .settings(
@@ -148,6 +166,12 @@ val deps = new {
     "javax.activation" % "activation" % "1.1.1",
     "org.glassfish.jaxb" % "jaxb-runtime" % "2.4.0-b180830.0438"
   )
+
+  val azureStorageBlob = Seq(
+    "com.azure" % "azure-storage-blob" % "12.25.1"
+  )
+
+  val fs2FTP = "com.github.regis-leray" %% "fs2-ftp" % "0.8.4"
 
   val scalaUri = "io.lemonlabs" %% "scala-uri" % "4.0.3"
 
